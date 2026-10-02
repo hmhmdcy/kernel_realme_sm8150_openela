@@ -1,0 +1,310 @@
+--- a/fs/fuse/acl.c
++++ b/fs/fuse/acl.c
+@@ -37,7 +37,7 @@
+ 		return ERR_PTR(-ENOMEM);
+ 	size = fuse_getxattr(inode, name, value, PAGE_SIZE);
+ 	if (size > 0)
+-		acl = posix_acl_from_xattr(&init_user_ns, value, size);
++		acl = posix_acl_from_xattr(fc->user_ns, value, size);
+ 	else if ((size == 0) || (size == -ENODATA) ||
+ 		 (size == -EOPNOTSUPP && fc->no_getxattr))
+ 		acl = NULL;
+@@ -87,7 +87,7 @@
+ 		if (!value)
+ 			return -ENOMEM;
+ 
+-		ret = posix_acl_to_xattr(&init_user_ns, acl, value, size);
++		ret = posix_acl_to_xattr(fc->user_ns, acl, value, size);
+ 		if (ret < 0) {
+ 			kfree(value);
+ 			return ret;
+--- a/fs/fuse/cuse.c
++++ b/fs/fuse/cuse.c
+@@ -498,7 +498,7 @@
+ 	if (!cc)
+ 		return -ENOMEM;
+ 
+-	fuse_conn_init(&cc->fc);
++	fuse_conn_init(&cc->fc, &init_user_ns);
+ 
+ 	fud = fuse_dev_alloc(&cc->fc);
+ 	if (!fud) {
+--- a/fs/fuse/dev.c
++++ b/fs/fuse/dev.c
+@@ -116,8 +116,8 @@
+ 
+ static void fuse_req_init_context(struct fuse_conn *fc, struct fuse_req *req)
+ {
+-	req->in.h.uid = from_kuid_munged(&init_user_ns, current_fsuid());
+-	req->in.h.gid = from_kgid_munged(&init_user_ns, current_fsgid());
++	req->in.h.uid = from_kuid_munged(fc->user_ns, current_fsuid());
++	req->in.h.gid = from_kgid_munged(fc->user_ns, current_fsgid());
+ 	req->in.h.pid = pid_nr_ns(task_pid(current), fc->pid_ns);
+ }
+ 
+--- a/fs/fuse/dir.c
++++ b/fs/fuse/dir.c
+@@ -933,8 +933,8 @@
+ 	stat->ino = attr->ino;
+ 	stat->mode = (inode->i_mode & S_IFMT) | (attr->mode & 07777);
+ 	stat->nlink = attr->nlink;
+-	stat->uid = make_kuid(&init_user_ns, attr->uid);
+-	stat->gid = make_kgid(&init_user_ns, attr->gid);
++	stat->uid = make_kuid(fc->user_ns, attr->uid);
++	stat->gid = make_kgid(fc->user_ns, attr->gid);
+ 	stat->rdev = inode->i_rdev;
+ 	stat->atime.tv_sec = attr->atime;
+ 	stat->atime.tv_nsec = attr->atimensec;
+@@ -1566,17 +1566,17 @@
+ 	return true;
+ }
+ 
+-static void iattr_to_fattr(struct iattr *iattr, struct fuse_setattr_in *arg,
+-			   bool trust_local_cmtime)
++static void iattr_to_fattr(struct fuse_conn *fc, struct iattr *iattr,
++			   struct fuse_setattr_in *arg, bool trust_local_cmtime)
+ {
+ 	unsigned ivalid = iattr->ia_valid;
+ 
+ 	if (ivalid & ATTR_MODE)
+ 		arg->valid |= FATTR_MODE,   arg->mode = iattr->ia_mode;
+ 	if (ivalid & ATTR_UID)
+-		arg->valid |= FATTR_UID,    arg->uid = from_kuid(&init_user_ns, iattr->ia_uid);
++		arg->valid |= FATTR_UID,    arg->uid = from_kuid(fc->user_ns, iattr->ia_uid);
+ 	if (ivalid & ATTR_GID)
+-		arg->valid |= FATTR_GID,    arg->gid = from_kgid(&init_user_ns, iattr->ia_gid);
++		arg->valid |= FATTR_GID,    arg->gid = from_kgid(fc->user_ns, iattr->ia_gid);
+ 	if (ivalid & ATTR_SIZE)
+ 		arg->valid |= FATTR_SIZE,   arg->size = iattr->ia_size;
+ 	if (ivalid & ATTR_ATIME) {
+@@ -1761,7 +1761,7 @@
+ 
+ 	memset(&inarg, 0, sizeof(inarg));
+ 	memset(&outarg, 0, sizeof(outarg));
+-	iattr_to_fattr(attr, &inarg, trust_local_cmtime);
++	iattr_to_fattr(fc, attr, &inarg, trust_local_cmtime);
+ 	if (file) {
+ 		struct fuse_file *ff = file->private_data;
+ 		inarg.valid |= FATTR_FH;
+--- a/fs/fuse/fuse_i.h
++++ b/fs/fuse/fuse_i.h
+@@ -486,6 +486,9 @@
+ 
+ 	/** The pid namespace for this mount */
+ 	struct pid_namespace *pid_ns;
++	/** The user namespace for this mount */
++	struct user_namespace *user_ns;
++
+ 
+ 	/** Maximum read size */
+ 	unsigned max_read;
+@@ -911,7 +914,7 @@
+ /**
+  * Initialize fuse_conn
+  */
+-void fuse_conn_init(struct fuse_conn *fc);
++void fuse_conn_init(struct fuse_conn *fc, struct user_namespace *user_ns);
+ 
+ /**
+  * Release reference to fuse_conn
+@@ -1018,6 +1021,7 @@
+ int fuse_removexattr(struct inode *inode, const char *name);
+ extern const struct xattr_handler *fuse_xattr_handlers[];
+ extern const struct xattr_handler *fuse_acl_xattr_handlers[];
++extern const struct xattr_handler *fuse_no_acl_xattr_handlers[];
+ 
+ struct posix_acl;
+ struct posix_acl *fuse_get_acl(struct inode *inode, int type);
+--- a/fs/fuse/inode.c
++++ b/fs/fuse/inode.c
+@@ -171,8 +171,8 @@
+ 	inode->i_ino     = fuse_squash_ino(attr->ino);
+ 	inode->i_mode    = (inode->i_mode & S_IFMT) | (attr->mode & 07777);
+ 	set_nlink(inode, attr->nlink);
+-	inode->i_uid     = make_kuid(&init_user_ns, attr->uid);
+-	inode->i_gid     = make_kgid(&init_user_ns, attr->gid);
++	inode->i_uid     = make_kuid(fc->user_ns, attr->uid);
++	inode->i_gid     = make_kgid(fc->user_ns, attr->gid);
+ 	inode->i_blocks  = attr->blocks;
+ 
+ 	/* Sanitize nsecs */
+@@ -489,7 +489,8 @@
+ 	return err;
+ }
+ 
+-static int parse_fuse_opt(char *opt, struct fuse_mount_data *d, int is_bdev)
++static int parse_fuse_opt(char *opt, struct fuse_mount_data *d, int is_bdev,
++			  struct user_namespace *user_ns)
+ {
+ 	char *p;
+ 	memset(d, 0, sizeof(struct fuse_mount_data));
+@@ -525,7 +526,7 @@
+ 		case OPT_USER_ID:
+ 			if (fuse_match_uint(&args[0], &uv))
+ 				return 0;
+-			d->user_id = make_kuid(current_user_ns(), uv);
++			d->user_id = make_kuid(user_ns, uv);
+ 			if (!uid_valid(d->user_id))
+ 				return 0;
+ 			d->user_id_present = 1;
+@@ -534,7 +535,7 @@
+ 		case OPT_GROUP_ID:
+ 			if (fuse_match_uint(&args[0], &uv))
+ 				return 0;
+-			d->group_id = make_kgid(current_user_ns(), uv);
++			d->group_id = make_kgid(user_ns, uv);
+ 			if (!gid_valid(d->group_id))
+ 				return 0;
+ 			d->group_id_present = 1;
+@@ -577,8 +578,8 @@
+ 	struct super_block *sb = root->d_sb;
+ 	struct fuse_conn *fc = get_fuse_conn_super(sb);
+ 
+-	seq_printf(m, ",user_id=%u", from_kuid_munged(&init_user_ns, fc->user_id));
+-	seq_printf(m, ",group_id=%u", from_kgid_munged(&init_user_ns, fc->group_id));
++	seq_printf(m, ",user_id=%u", from_kuid_munged(fc->user_ns, fc->user_id));
++	seq_printf(m, ",group_id=%u", from_kgid_munged(fc->user_ns, fc->group_id));
+ 	if (fc->default_permissions)
+ 		seq_puts(m, ",default_permissions");
+ 	if (fc->allow_other)
+@@ -609,7 +610,7 @@
+ 	fpq->connected = 1;
+ }
+ 
+-void fuse_conn_init(struct fuse_conn *fc)
++void fuse_conn_init(struct fuse_conn *fc, struct user_namespace *user_ns)
+ {
+ 	memset(fc, 0, sizeof(*fc));
+ 	spin_lock_init(&fc->lock);
+@@ -635,6 +636,7 @@
+ 	fc->attr_version = 1;
+ 	get_random_bytes(&fc->scramble_key, sizeof(fc->scramble_key));
+ 	fc->pid_ns = get_pid_ns(task_active_pid_ns(current));
++	fc->user_ns = get_user_ns(user_ns);
+ }
+ EXPORT_SYMBOL_GPL(fuse_conn_init);
+ 
+@@ -644,6 +646,7 @@
+ 		if (fc->destroy_req)
+ 			fuse_request_free(fc->destroy_req);
+ 		put_pid_ns(fc->pid_ns);
++		put_user_ns(fc->user_ns);
+ 		fc->release(fc);
+ 	}
+ }
+@@ -927,7 +930,8 @@
+ 				fc->handle_killpriv = 1;
+ 			if (arg->time_gran && arg->time_gran <= 1000000000)
+ 				fc->sb->s_time_gran = arg->time_gran;
+-			if ((arg->flags & FUSE_POSIX_ACL)) {
++			if ((arg->flags & FUSE_POSIX_ACL) &&
++			    fc->user_ns == &init_user_ns) {
+ 				fc->default_permissions = 1;
+ 				fc->posix_acl = 1;
+ 				fc->sb->s_xattr = fuse_acl_xattr_handlers;
+@@ -1094,7 +1098,7 @@
+ 
+ 	sb->s_flags &= ~(MS_NOSEC | SB_I_VERSION);
+ 
+-	if (!parse_fuse_opt(data, &d, is_bdev))
++	if (!parse_fuse_opt(data, &d, is_bdev, sb->s_user_ns))
+ 		goto err;
+ 
+ 	if (is_bdev) {
+@@ -1120,15 +1124,19 @@
+ 		goto err;
+ 
+ 	if ((file->f_op != &fuse_dev_operations) ||
+-	    (file->f_cred->user_ns != &init_user_ns))
++	    (file->f_cred->user_ns != sb->s_user_ns))
+ 		goto err_fput;
++
++	/* Unprivileged mount ACLs cannot use the init namespace handlers. */
++	if (sb->s_user_ns != &init_user_ns)
++		sb->s_xattr = fuse_no_acl_xattr_handlers;
+ 
+ 	fc = kmalloc(sizeof(*fc), GFP_KERNEL);
+ 	err = -ENOMEM;
+ 	if (!fc)
+ 		goto err_fput;
+ 
+-	fuse_conn_init(fc);
++	fuse_conn_init(fc, sb->s_user_ns);
+ 	fc->release = fuse_free_conn;
+ 
+ 	fud = fuse_dev_alloc(fc);
+@@ -1248,7 +1256,7 @@
+ static struct file_system_type fuse_fs_type = {
+ 	.owner		= THIS_MODULE,
+ 	.name		= "fuse",
+-	.fs_flags	= FS_HAS_SUBTYPE,
++	.fs_flags	= FS_HAS_SUBTYPE | FS_USERNS_MOUNT,
+ 	.mount		= fuse_mount,
+ 	.kill_sb	= fuse_kill_sb_anon,
+ };
+--- a/fs/fuse/xattr.c
++++ b/fs/fuse/xattr.c
+@@ -201,6 +201,26 @@
+ 	return fuse_setxattr(inode, name, value, size, flags);
+ }
+ 
++static bool no_xattr_list(struct dentry *dentry)
++{
++	return false;
++}
++
++static int no_xattr_get(const struct xattr_handler *handler,
++			struct dentry *dentry, struct inode *inode,
++			const char *name, void *value, size_t size)
++{
++	return -EOPNOTSUPP;
++}
++
++static int no_xattr_set(const struct xattr_handler *handler,
++			struct dentry *dentry, struct inode *nodee,
++			const char *name, const void *value,
++			size_t size, int flags)
++{
++	return -EOPNOTSUPP;
++}
++
+ static const struct xattr_handler fuse_xattr_handler = {
+ 	.prefix = "",
+ 	.get    = fuse_xattr_get,
+@@ -218,3 +238,26 @@
+ 	&fuse_xattr_handler,
+ 	NULL
+ };
++
++static const struct xattr_handler fuse_no_acl_access_xattr_handler = {
++	.name  = XATTR_NAME_POSIX_ACL_ACCESS,
++	.flags = ACL_TYPE_ACCESS,
++	.list  = no_xattr_list,
++	.get   = no_xattr_get,
++	.set   = no_xattr_set,
++};
++
++static const struct xattr_handler fuse_no_acl_default_xattr_handler = {
++	.name  = XATTR_NAME_POSIX_ACL_DEFAULT,
++	.flags = ACL_TYPE_ACCESS,
++	.list  = no_xattr_list,
++	.get   = no_xattr_get,
++	.set   = no_xattr_set,
++};
++
++const struct xattr_handler *fuse_no_acl_xattr_handlers[] = {
++	&fuse_no_acl_access_xattr_handler,
++	&fuse_no_acl_default_xattr_handler,
++	&fuse_xattr_handler,
++	NULL
++};
+--- a/kernel/bpf/syscall.c
++++ b/kernel/bpf/syscall.c
+@@ -1820,6 +1820,7 @@
+ 	case BPF_CGROUP_UDP4_RECVMSG:
+ 	case BPF_CGROUP_UDP6_RECVMSG:
+ 	case BPF_CGROUP_SOCK_OPS:
++	case BPF_CGROUP_DEVICE:
+ 	case BPF_CGROUP_SYSCTL:
+ 	case BPF_CGROUP_GETSOCKOPT:
+ 	case BPF_CGROUP_SETSOCKOPT:

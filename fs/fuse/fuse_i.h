@@ -486,6 +486,9 @@ struct fuse_conn {
 
 	/** The pid namespace for this mount */
 	struct pid_namespace *pid_ns;
+	/** The user namespace for this mount */
+	struct user_namespace *user_ns;
+
 
 	/** Maximum read size */
 	unsigned max_read;
@@ -911,7 +914,7 @@ struct fuse_conn *fuse_conn_get(struct fuse_conn *fc);
 /**
  * Initialize fuse_conn
  */
-void fuse_conn_init(struct fuse_conn *fc);
+void fuse_conn_init(struct fuse_conn *fc, struct user_namespace *user_ns);
 
 /**
  * Release reference to fuse_conn
@@ -1018,6 +1021,7 @@ ssize_t fuse_listxattr(struct dentry *entry, char *list, size_t size);
 int fuse_removexattr(struct inode *inode, const char *name);
 extern const struct xattr_handler *fuse_xattr_handlers[];
 extern const struct xattr_handler *fuse_acl_xattr_handlers[];
+extern const struct xattr_handler *fuse_no_acl_xattr_handlers[];
 
 struct posix_acl;
 struct posix_acl *fuse_get_acl(struct inode *inode, int type);

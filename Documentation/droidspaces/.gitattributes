@@ -1,0 +1,3 @@
+* text eol=lf
+# Literal unified diffs contain context markers followed by tabs or blank lines.
+*.patch -whitespace
