@@ -1,0 +1,6 @@
+{
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-v6.6.0-podman2-lr2-ksu3",
+  "boot_sha256": "9588a95055bf35ced553297541a4e703b038451dcdfa775281b1f8c9f7a0bc58",
+  "boot_completed": "1",
+  "selinux": "Enforcing"
+}

@@ -43,9 +43,71 @@ def device():
     return adb
 
 
+def guest_info(adb):
+    command = shlex.join([DS, '--name=' + NAME, '--format', 'info'])
+    for attempt in range(3):
+        result = subprocess.run(adb + ['exec-out', 'su', '-c', command], capture_output=True, timeout=15)
+        try:
+            info = json.loads(result.stdout) if result.returncode == 0 else None
+        except json.JSONDecodeError:
+            info = None
+        if info is not None:
+            if info['name'] != NAME or not isinstance(info['pid'], int) or info['pid'] <= 1:
+                raise RuntimeError('Unexpected guest identity')
+            return info
+        if attempt < 2:
+            time.sleep(1)
+    raise RuntimeError('Guest info is unavailable or malformed: ' + result.stderr.decode(errors='replace'))
+
+
+def collect_service(adb, label, timeout):
+    """Read an existing service result through the verified guest's proc root."""
+    info = guest_info(adb)
+    work = '/proc/' + str(info['pid']) + '/root/tmp/rmx1931-tests/service-' + label
+    def read(text):
+        return subprocess.run(adb + ['exec-out', 'su', '-c', text], capture_output=True, timeout=15)
+    guard = read('set -e; test -f /proc/' + str(info['pid']) + '/root/etc/droidspaces; test -d ' + work + '; test ! -L ' + work)
+    if guard.returncode:
+        raise RuntimeError('Service result directory is unverified')
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        result = read('if test -f ' + work + '/status; then cat ' + work + '/status; else echo pending; fi')
+        status = result.stdout.strip()
+        if result.returncode == 0 and status.isdigit():
+            output = read('cat ' + work + '/stdout')
+            errors = read('cat ' + work + '/stderr')
+            if output.returncode or errors.returncode:
+                raise RuntimeError('Probe finished, but durable output collection failed')
+            return subprocess.CompletedProcess([], int(status), output.stdout, errors.stdout)
+        time.sleep(1)
+    return subprocess.CompletedProcess([], 124, b'',
+        ('Guest service is still unverified; inspect rmx1931-test-' + label + ' before retrying.').encode())
+
+
+def guest_service(adb, command, label, timeout):
+    """Launch once, then collect output independently of the entry stream."""
+    argv = shlex.split(command)
+    work = '/tmp/rmx1931-tests/service-' + label
+    unit = 'rmx1931-test-' + label
+    payload = (shlex.join(argv[3:]) + ' > ' + work + '/stdout 2> ' + work + '/stderr; '
+               'status=$?; printf "%s\\n" "$status" > ' + work + '/status; exit "$status"')
+    launch = shlex.join(['systemd-run', '--quiet', '--no-block', '--collect',
+                         '--unit=' + unit, '--property=OOMScoreAdjust=0', '/bin/sh', '-c', payload])
+    setup = ('set -e; test -f /etc/droidspaces; test ! -e ' + work + '; '
+             'test ! -L ' + work + '; mkdir -m 700 ' + work + '; ' + launch)
+    entry = argv[:3]
+    def invoke(arguments, limit=15):
+        text = shlex.join(entry + arguments)
+        return subprocess.run(adb + ['shell', 'su -c ' + shlex.quote(text)], capture_output=True, timeout=limit)
+    launched = invoke(['/bin/sh', '-c', setup])
+    if launched.returncode:
+        return launched
+    return collect_service(adb, label, timeout)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('action', choices=['shell', 'prepare', 'start', 'run', 'run-file', 'stop', 'info'])
+    p.add_argument('action', choices=['shell', 'prepare', 'start', 'run', 'run-file', 'stop', 'info', 'collect-service'])
     p.add_argument('--command')
     p.add_argument('--script', type=Path)
     p.add_argument('--script-arg', action='append', default=[])
@@ -54,6 +116,7 @@ def main():
     p.add_argument('--resume-extract', action='store_true')
     p.add_argument('--auto-cgroup', action='store_true')
     p.add_argument('--force-cgroupv1', action='store_true', help='Legacy diagnostic only; Podman profile requires v2')
+    p.add_argument('--guest-service', action='store_true', help='Run a probe as a transient guest systemd service with collected exit status')
     args = p.parse_args()
     if not args.label.replace('-', '').replace('_', '').isalnum():
         raise RuntimeError('Invalid report label')
@@ -98,8 +161,7 @@ def main():
         normalized.write_bytes(content)
         remote = '/data/local/tmp/rmx1931-test-' + args.label + '.sh'
         subprocess.run(adb + ['push', str(normalized), remote], check=True, capture_output=True)
-        info_command = shlex.join([DS, '--name=' + NAME, '--format', 'info'])
-        info = json.loads(subprocess.check_output(adb + ['shell', 'su -c ' + shlex.quote(info_command)]))
+        info = guest_info(adb)
         if info['name'] != NAME or not isinstance(info['pid'], int) or info['pid'] <= 1:
             raise RuntimeError('Container identity is not verified')
         target = '/proc/' + str(info['pid']) + '/root/tmp/rmx1931-tests'
@@ -116,15 +178,35 @@ def main():
         if not args.command:
             raise RuntimeError('--command is required')
         command = shlex.join([DS, '--name=' + NAME, 'run', '/bin/sh', '-c', args.command])
+    elif args.action == 'collect-service':
+        command = 'Read existing guest service rmx1931-test-' + args.label
     elif args.action in {'stop', 'info'}:
         command = shlex.join([DS, '--name=' + NAME, args.action])
     else:
         if not args.command:
             raise RuntimeError('--command is required')
         command = args.command
+    if args.guest_service:
+        if args.action not in {'run', 'run-file'}:
+            raise RuntimeError('--guest-service requires run or run-file')
     try:
-        result = subprocess.run(adb + ['shell', 'su -c ' + shlex.quote(command)],
-                                capture_output=True, timeout=args.timeout)
+        if args.action == 'collect-service':
+            result = collect_service(adb, args.label, args.timeout)
+        elif args.guest_service:
+            result = guest_service(adb, command, args.label, args.timeout)
+        else:
+            result = subprocess.run(adb + ['shell', 'su -c ' + shlex.quote(command)],
+                                    capture_output=True, timeout=args.timeout)
+            # ADB can lose its transport briefly while Android finishes boot.
+            # Retry only the client's explicit pre-execution missing-device
+            # error. Never replay timed-out or partially executed commands.
+            if result.returncode == 1 and not result.stdout and re.search(
+                    rb"device '[^']+' not found", result.stderr):
+                refreshed = device()
+                if refreshed[-1] != adb[-1]:
+                    raise RuntimeError('ADB target changed during reconnection')
+                result = subprocess.run(refreshed + ['shell', 'su -c ' + shlex.quote(command)],
+                                        capture_output=True, timeout=args.timeout)
     except subprocess.TimeoutExpired as error:
         result = subprocess.CompletedProcess([], 124, error.stdout or b'',
                     (error.stderr or b'') + b'\nADB command timed out; check remote task state before retrying.\n')
@@ -140,6 +222,8 @@ def main():
               'action': args.action, 'command': command, 'returncode': result.returncode,
               'stdout': output,
               'stderr': errors}
+    if args.guest_service or args.action == 'collect-service':
+        report['execution'] = 'guest systemd service; durable log and explicit exit status'
     (directory / (args.label + '.json')).write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False, indent=2), flush=True)
     raise SystemExit(result.returncode)

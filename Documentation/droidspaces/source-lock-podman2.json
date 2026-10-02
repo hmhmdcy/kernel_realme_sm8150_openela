@@ -1,0 +1,150 @@
+{
+  "scope": "RMX1931CN crDroid16 / Android16 kernel and prepared Ubuntu24.04.5 Podman guest",
+  "kernel_base": {
+    "repository": "https://github.com/cyborgdc2000/kernel_realme_sm8150",
+    "branch": "lineage-23.0-ksunext",
+    "commit": "1a5720a5213b093c4cd54a7d8db5c5eeed2ca344"
+  },
+  "publication": {
+    "repository": "https://github.com/hmhmdcy/kernel_realme_sm8150_openela",
+    "branch": "codex/rmx1931-droidspaces-podman",
+    "fork_network_source": "cyborgdc2000/kernel_realme_sm8150",
+    "reuses_existing_user_fork": true
+  },
+  "ksunext": {
+    "commit": "54b26fd32c90ec15fba5c87a4107a34918a66ed2",
+    "complete_history_commit_count": 2580,
+    "version": 12780
+  },
+  "droidspaces": {
+    "tag": "v6.6.0",
+    "commit": "cff50fa04d50472b607ba6822e8bf482b19cd427",
+    "official_runtime_sha256": "26dbd935d24b8ba8b55a9cb65b2edc43ebbaf298317f243939e67a92a8a8558e"
+  },
+  "compiler": "AOSP clang-r547379 / 20.0.0",
+  "tested_kernel_release": "4.14.356-openela-rc1-perf-droidspaces-v6.6.0-podman2",
+  "tested_boot_sha256": "71591c95ec72f1a5582cd0fc3f3e7ce96d74fc469e9dace231f10ed0765118b9",
+  "tested_kernel_sha256": "e2f997b865ddb8881927953b0d254bda206240bf4b7d1270bcb1e800a4bec9b7",
+  "resolved_config_sha256": "d21cb12a740ed821715994ff5c4dd135c847809eb9df0116a2fd02fa777cb706",
+  "modified_source_sha256": {
+    "fs/fuse/acl.c": "e1e72acd57f471c341aee2cdb99f39d5676a1dafadcb75f800b39949fada8bdd",
+    "fs/fuse/cuse.c": "c983d84405d974dbcc505a34612398f0ca9eb551cc4b9afcf76bfd99b7365fc5",
+    "fs/fuse/dev.c": "82e9ccd9b21be25f32f36f32f716dcd22cb5c972a2b922baa260e98a00856d00",
+    "fs/fuse/dir.c": "5d64e8589f80eac0ed6fd349eb6be4242792ef7ea73d037e6cf5a7ebd27ff5c4",
+    "fs/fuse/fuse_i.h": "a6a7faa8c37af66d68eb76415c67160429489195794cd9f4fbc476eb7f9dc169",
+    "fs/fuse/inode.c": "aadf790ab2d2543ffe1004d2c1f43b57798364ad7cf0f52eddc372558e1a30c4",
+    "fs/fuse/xattr.c": "83bae93d83a24db21b41a10baa05309bbb1aca4c0eabd3d9d7fad2105fb930d6",
+    "kernel/bpf/syscall.c": "20cf0fc3b87c3406640583f759a108da2b83d7aa671d37b6617762c02811dfc9",
+    "fs/proc/base.c": "162c934de37d6e699836b7b178a4f0956dfb0b9ad72d36963dee06ddd5bb59a6",
+    "kernel/cgroup/cgroup.c": "75aa734d950a6828d154e972754464699c7c2a092b85be0499e72aeabc84ff70"
+  },
+  "patch_sha256": {
+    "cgroup": "59e6fca564967998683849ba1d4b16dee96e14fdfb25190fdf63e88163faba4a",
+    "fuse_bpf": "f7d226ef922631333faf23827600ae0fe536ffe766bdbf66f87ed13b8c40ed0b",
+    "proc_cmdline": "949a340bc87b9405dd450a8788970eac47f4c056517ae3152124090d87733b82"
+  },
+  "proc_upstream_commits": [
+    "3d712546d8ba9f25cdf080d79f90482aa4231ed4",
+    "d26d0cd97c88eb1a5704b42e41ab443406807810"
+  ],
+  "runtime_helpers_sha256": {
+    "start_podman_guest.py": "7b63f88bfe53481cff71133ca0686adca04aacbb50aa41820519060996853123",
+    "device_runtime.py": "6d7ee99fb297ca6cc0dd6e696c0780d0fb7952136cea38bbb4d853d53fdfa98c",
+    "delegate_guest_cgroup_v2.py": "5cf1de4f1e047aa0b6ae1987b4d8722d4fdf347ae709a16900adfc271c422b9e",
+    "prepare_guest_sandbox.py": "9cbbccf011dec5a0e238fb0b27d78711e367adf4c6d0d9b183b2679e22bcc86c",
+    "configure_podman_user_session.sh": "f1c3d747c9c848a8162749bcc90f1191f981a2a472540ef262461c650f54f39a",
+    "install_guest_podman_oom_wrapper.sh": "ff5e16e61fae049705fed0b06c2363c018c19b2786a81751c152f195920d468c",
+    "probe_profile_after_restart.sh": "401ecb804c51edbb3d9ea3d11db7d0d84792d115cdfa9f736e09fdfa6b0c46ae",
+    "probe_podman_functional.sh": "21a9398c882a08b02fdbcd48bffe24336beaa7902e0c4bedf8d0afd5826edd34",
+    "probe_podman_memory_enforcement.sh": "79fbc97c39ee2ea8933a9ac2419736d666a7cdc8f087193a9478073a09def4aa",
+    "probe_podman_pids_enforcement.sh": "7dee3c7afbdc00b5be754dc357757074ab4f91ccdd2137d698d8ea5816072003",
+    "probe_cmdline_regression.sh": "49e911a9bedabc3045bbbeb987f0a74ecd128e3c57ed085f88cd612b5d1745a7",
+    "probe_podman_rootful_build.sh": "604046680f26eddad7b25a682e31bcb1ed2f6406d8e1098a30121059db32a22e",
+    "probe_rootless_tcp.sh": "4eb4bb1ec3532b32bab17900ee3b85c0d955e1acc68b0924f5c677afe623d60f"
+  },
+  "runtime_acceptance": {
+    "rootful_functional": {
+      "result": "pass",
+      "marker": "FUNCTIONAL_ACCEPTANCE_rootful_PASS",
+      "observed_at": "2026-10-02T10:54:20.069882+00:00",
+      "private_record_sha256": "9585a0821e2ea1a8a1b1bf2a9fdd96235fb2936eeff57de250864182e7fa4321"
+    },
+    "rootless_functional": {
+      "result": "pass",
+      "marker": "FUNCTIONAL_ACCEPTANCE_rootless_PASS",
+      "observed_at": "2026-10-02T10:54:56.367892+00:00",
+      "private_record_sha256": "cabb4bbe5e300fad46cd7a94130f7a577155f38619b7c031ea5c72a876e11067"
+    },
+    "rootful_memory_enforcement": {
+      "result": "pass",
+      "marker": "MEMORY_LIMIT_ENFORCEMENT_PASS_UID_0",
+      "observed_at": "2026-10-02T11:08:25.170420+00:00",
+      "private_record_sha256": "f8f920a80cd7de609506f87a28a6cf020d23e45373e3e7836d0a64e53c66b9a1"
+    },
+    "rootless_memory_enforcement": {
+      "result": "pass",
+      "marker": "MEMORY_LIMIT_ENFORCEMENT_PASS_UID_1000",
+      "observed_at": "2026-10-02T11:08:32.210856+00:00",
+      "private_record_sha256": "bf959c07b73b7f176c12ec4ca201e497b3c0ec505a40f34a5015f5009e78f2bd"
+    },
+    "rootful_pids_enforcement": {
+      "result": "pass",
+      "marker": "PIDS_ENFORCEMENT_PASS_UID_0",
+      "observed_at": "2026-10-02T11:14:28.070114+00:00",
+      "private_record_sha256": "b3e2f71e84668b84cababfba76142a5cc2c132379b6555692446be8371e22f37"
+    },
+    "rootless_pids_enforcement": {
+      "result": "pass",
+      "marker": "PIDS_ENFORCEMENT_PASS_UID_1000",
+      "observed_at": "2026-10-02T11:15:18.355058+00:00",
+      "private_record_sha256": "223cd474d442ae8733af6d6e7f72610d656a3b99c6f299b170d758824dcbe49b"
+    },
+    "rootful_build": {
+      "result": "pass",
+      "marker": "ROOTFUL_IMAGE_BUILD_PASS",
+      "observed_at": "2026-10-02T10:47:31.571332+00:00",
+      "private_record_sha256": "04aedcd1fe95ebcdd6b313f3f280122113716b3ed6bc5169a6d9ceec8d5b85f9"
+    },
+    "rootless_build": {
+      "result": "pass",
+      "marker": "Successfully tagged localhost/rmx1931-probe:1",
+      "observed_at": "2026-10-02T10:51:01.641829+00:00",
+      "private_record_sha256": "b8eef05deea5c29f9bbd6df918de1661475846bfbd662a4a61275905520a9a11"
+    },
+    "cmdline_regression": {
+      "result": "pass",
+      "marker": "CMDLINE_FINAL_NUL_PASS",
+      "observed_at": "2026-10-02T10:57:52.756317+00:00",
+      "private_record_sha256": "00dc837362bb80c472ce6414518e3073675cedfe5af1ee1b7935203350b4a8ae"
+    },
+    "restart_profile": {
+      "result": "pass",
+      "marker": "ROOTFUL_ROOTLESS_AFTER_GUEST_RESTART_PASS",
+      "observed_at": "2026-10-02T11:30:18.940735+00:00",
+      "private_record_sha256": "75caabb8868a96cf35fe52ffee7224cc18c847ff2ce3d913d7b1257708252001"
+    },
+    "rootless_external_tcp": {
+      "result": "pass",
+      "marker": "ROOTLESS_EXTERNAL_TCP_PASS",
+      "observed_at": "2026-10-02T11:20:33.025291+00:00",
+      "private_record_sha256": "2be4329c9d80b261fbcb7ba071b3e2acd30f4895df4065a367e2fdf235229199"
+    },
+    "guest_stop_cleanup": {
+      "result": "pass",
+      "marker": "GUEST_STOP_CLEANUP_PASS",
+      "observed_at": "2026-10-02T11:28:44.047243+00:00",
+      "private_record_sha256": "30e843f66b12505ca87b7ceb7cbb87edc8d0a6cdd7741d71c5a13ac885698b17"
+    },
+    "guest_registry_https": {
+      "result": "pass",
+      "scope": "CA-verified TLS, registry HTTP 401 expected"
+    }
+  },
+  "hardware": "User verified Wi-Fi toggle/reconnect, touch and fingerprint; no new hardware faults reported. Other hardware features are not individually certified.",
+  "limitations": [
+    "WALT: CPU quota unavailable",
+    "IPv6 NAT and complete nftables feature matrix untested",
+    "Podman 4.9.3 tested; Docker daemon not accepted",
+    "Prepared guest/profile required after each guest or Android restart"
+  ]
+}

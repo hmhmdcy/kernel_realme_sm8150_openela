@@ -14,5 +14,5 @@ COPY busybox /bin/busybox
 RUN ["/bin/busybox", "--install", "-s", "/bin"]
 CMD ["/bin/sh"]
 EOF
-timeout 40 podman build --network=none -t localhost/rmx1931-probe:1 "$context"
+timeout 40 podman build --no-cache --network=none -t localhost/rmx1931-probe:1 "$context"
 printf 'ROOTFUL_IMAGE_BUILD_PASS\n'

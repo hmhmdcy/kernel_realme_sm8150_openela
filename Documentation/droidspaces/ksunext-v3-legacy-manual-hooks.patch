@@ -1,0 +1,130 @@
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1711,7 +1711,6 @@
+ }
+ 
+ #ifdef CONFIG_KSU
+-extern bool ksu_execveat_hook __read_mostly;
+ extern int ksu_handle_execveat(int *fd, struct filename **filename_ptr, void *argv,
+ 			void *envp, int *flags);
+ extern int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
+@@ -1733,10 +1732,7 @@
+ 	int retval;
+ 
+ #ifdef CONFIG_KSU
+-	if (unlikely(ksu_execveat_hook))
+-		ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
+-	else
+-		ksu_handle_execveat_sucompat(&fd, &filename, &argv, &envp, &flags);
++	ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
+ #endif
+ 
+ 	if (IS_ERR(filename))
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -430,7 +430,7 @@
+ EXPORT_SYMBOL(kernel_read);
+ 
+ #ifdef CONFIG_KSU
+-extern bool ksu_vfs_read_hook __read_mostly;
++extern bool ksu_init_rc_hook __read_mostly;
+ extern int ksu_handle_vfs_read(struct file **file_ptr, char __user **buf_ptr,
+ 			size_t *count_ptr, loff_t **pos);
+ #endif
+@@ -440,7 +440,7 @@
+ 	ssize_t ret;
+ 
+ #ifdef CONFIG_KSU
+-	if (unlikely(ksu_vfs_read_hook))
++	if (unlikely(ksu_init_rc_hook))
+ 		ksu_handle_vfs_read(&file, &buf, &count, &pos);
+ #endif
+ 
+--- a/fs/stat.c
++++ b/fs/stat.c
+@@ -362,17 +362,29 @@
+ }
+ 
+ #if !defined(__ARCH_WANT_STAT64) || defined(__ARCH_WANT_SYS_NEWFSTATAT)
++#ifdef CONFIG_KSU_MANUAL_HOOK
++extern int ksu_handle_stat(int *dfd, const char __user **filename, int *flags);
++#endif
++
+ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
+ 		struct stat __user *, statbuf, int, flag)
+ {
+ 	struct kstat stat;
+ 	int error;
+ 
++#ifdef CONFIG_KSU_MANUAL_HOOK
++	ksu_handle_stat(&dfd, &filename, &flag);
++#endif
++
+ 	error = vfs_fstatat(dfd, filename, &stat, flag);
+ 	if (error)
+ 		return error;
+ 	return cp_new_stat(&stat, statbuf);
+ }
++#endif
++
++#ifdef CONFIG_KSU_MANUAL_HOOK
++extern void ksu_handle_newfstat_ret(unsigned int *fd, struct stat __user **statbuf);
+ #endif
+ 
+ SYSCALL_DEFINE2(newfstat, unsigned int, fd, struct stat __user *, statbuf)
+@@ -383,6 +395,10 @@
+ 	if (!error)
+ 		error = cp_new_stat(&stat, statbuf);
+ 
++#ifdef CONFIG_KSU_MANUAL_HOOK
++	if (!error)
++		ksu_handle_newfstat_ret(&fd, &statbuf);
++#endif
+ 	return error;
+ }
+ 
+--- a/kernel/reboot.c
++++ b/kernel/reboot.c
+@@ -277,12 +277,20 @@
+  *
+  * reboot doesn't sync: do that yourself before calling this.
+  */
++#ifdef CONFIG_KSU_MANUAL_HOOK
++extern int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user **arg);
++#endif
++
+ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
+ 		void __user *, arg)
+ {
+ 	struct pid_namespace *pid_ns = task_active_pid_ns(current);
+ 	char buffer[256];
+ 	int ret = 0;
++
++#ifdef CONFIG_KSU_MANUAL_HOOK
++	ksu_handle_sys_reboot(magic1, magic2, cmd, &arg);
++#endif
+ 
+ 	/* We only trust the superuser with rebooting the system. */
+ 	if (!ns_capable(pid_ns->user_ns, CAP_SYS_BOOT))
+--- a/fs/devpts/inode.c
++++ b/fs/devpts/inode.c
+@@ -602,9 +602,6 @@
+ 	return dentry;
+ }
+ 
+-#ifdef CONFIG_KSU
+-extern int ksu_handle_devpts(struct inode*);
+-#endif
+ 
+ /**
+  * devpts_get_priv -- get private data for a slave
+@@ -614,9 +611,6 @@
+  */
+ void *devpts_get_priv(struct dentry *dentry)
+ {
+-#ifdef CONFIG_KSU
+-	ksu_handle_devpts(dentry->d_inode);
+-#endif
+ 	if (dentry->d_sb->s_magic != DEVPTS_SUPER_MAGIC)
+ 		return NULL;
+ 	return dentry->d_fsdata;

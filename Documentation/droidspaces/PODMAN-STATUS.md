@@ -1,5 +1,7 @@
 # RMX1931CN Podman 真机验收
 
+本文保留历史 Podman2 验收。当前 KSU v3 / LowRisk2 结果见 [KSUNEXT-STATUS.md](KSUNEXT-STATUS.md)，旧源码锁定见 [source-lock-podman2.json](source-lock-podman2.json)。
+
 2026-10-02，国行 RMX1931CN，crDroid 16 / Android 16。当前内核 `4.14.356-openela-rc1-perf-droidspaces-v6.6.0-podman2` 已只刷入 boot 并完成分区摘要回读，SELinux **Enforcing**。
 
 Ubuntu 24.04.5 运行于独立 6 GiB ext4 镜像，使用未经修改的官方 DroidSpaces v6.6.0、NAT、allow-sandboxing；systemd 为 guest PID 1，状态 running，无失败服务。Ubuntu 软件源签名和日期验证保持开启。

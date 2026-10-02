@@ -3,7 +3,10 @@
 set -eu
 test -f /etc/droidspaces
 test "$(id -u)" = 0
-case "$(uname -r)" in *-droidspaces-v6.6.0-podman2) ;; *) exit 1 ;; esac
+case "$(uname -r)" in
+    4.14.356-openela-rc1-perf-droidspaces-v6.6.0-podman2|4.14.356-openela-rc1-perf-droidspaces-v6.6.0-podman2-lowrisk2|4.14.356-openela-rc1-perf-droidspaces-v6.6.0-podman2-lr2-ksu3) ;;
+    *) exit 1 ;;
+esac
 temporary=/tmp/rmx1931-tests/podman-oom-wrapper
 test ! -L "$temporary"
 cat > "$temporary" <<'EOF'

@@ -36,7 +36,7 @@ runtime/
   artifacts/droidspaces/runtime/    # 自动创建的本地验收记录
 ```
 
-切换到 runtime 目录执行 Python 命令。Python 3.9+，电脑只连接一台已授权调试的 RMX1931/RMX1931CN，KSU Shell root 已授权。脚本严格检查已验收的 podman2 内核身份、SELinux Enforcing 与官方 DroidSpaces 二进制 SHA；自行重新构建产生不同内核身份时，应先核对新构建并评审身份检查。
+切换到 runtime 目录执行 Python 命令。Python 3.9+，电脑只连接一台已授权调试的 RMX1931/RMX1931CN，KSU Shell root 已授权。脚本严格检查已验收的 podman2、lowrisk2 或 `podman2-lr2-ksu3` 内核与对应 boot SHA、Android 完整开机、SELinux Enforcing 与官方 DroidSpaces 二进制 SHA。KSU v3 支持已在此工作区更新；从旧发布分支复制的脚本需同步新版，并带上本地 `artifacts/droidspaces/ksunext-boot-result.json` 验收记录。自行重新构建产生不同内核身份时，应先核对新构建并评审身份检查。
 
 脚本准备的是已创建的 guest，不能代替全新 rootfs 安装：需要官方 DroidSpaces v6.6.0 二进制放在 `/data/local/tmp/rmx1931-droidspaces-check`；Ubuntu24.04.5 ext4 镜像在 `/data/local/Droidspaces/Containers/rmx1931-podman/rootfs.img`，有官方 `/etc/droidspaces` 标记，systemd PID 1。
 
