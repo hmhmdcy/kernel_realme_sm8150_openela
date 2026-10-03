@@ -1,0 +1,6 @@
+id=rmx1931-crashlog
+name=RMX1931 pstore crash log archive
+version=1.1
+versionCode=2
+author=RMX1931 kernel project
+description=Archives existing ramoops records after boot with SELinux enforcing. No panic-time filesystem writes.

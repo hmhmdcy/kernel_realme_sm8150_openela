@@ -1,0 +1,82 @@
+--- a/include/net/netfilter/nf_socket.h
++++ b/include/net/netfilter/nf_socket.h
+@@ -1,6 +1,11 @@
+ /* SPDX-License-Identifier: GPL-2.0 */
+ #ifndef _NF_SOCK_H_
+ #define _NF_SOCK_H_
++
++#include <net/inet_sock.h>
++#include <net/inet_timewait_sock.h>
++#include <net/request_sock.h>
++#include <net/tcp_states.h>
+ 
+ struct net_device;
+ struct sk_buff;
+--- a/net/netfilter/nft_socket.c
++++ b/net/netfilter/nft_socket.c
+@@ -8,9 +8,7 @@
+ 
+ struct nft_socket {
+ 	enum nft_socket_keys		key:8;
+-	union {
+-		enum nft_registers	dreg:8;
+-	};
++	u8				dreg;
+ };
+ 
+ static void nft_socket_eval(const struct nft_expr *expr,
+@@ -22,6 +20,8 @@
+ 	struct sock *sk = skb->sk;
+ 	u32 *dest = &regs->data[priv->dreg];
+ 
++	if (sk && !net_eq(nft_net(pkt), sock_net(sk)))
++		sk = NULL;
+ 	if (!sk)
+ 		switch(nft_pf(pkt)) {
+ 		case NFPROTO_IPV4:
+@@ -39,12 +39,10 @@
+ 		}
+ 
+ 	if(!sk) {
+-		nft_reg_store8(dest, 0);
++		regs->verdict.code = NFT_BREAK;
+ 		return;
+ 	}
+ 
+-	/* So that subsequent socket matching not to require other lookups. */
+-	skb->sk = sk;
+ 
+ 	switch(priv->key) {
+ 	case NFT_SOCKET_TRANSPARENT:
+@@ -54,6 +52,10 @@
+ 		WARN_ON(1);
+ 		regs->verdict.code = NFT_BREAK;
+ 	}
++
++	/* Lookup returns a reference; an existing skb socket is borrowed. */
++	if (sk != skb->sk)
++		sock_gen_put(sk);
+ }
+ 
+ static const struct nla_policy nft_socket_policy[NFTA_SOCKET_MAX + 1] = {
+@@ -71,7 +73,7 @@
+ 	if (!tb[NFTA_SOCKET_DREG] || !tb[NFTA_SOCKET_KEY])
+ 		return -EINVAL;
+ 
+-	switch(ctx->family) {
++	switch(ctx->afi->family) {
+ 	case NFPROTO_IPV4:
+ #if IS_ENABLED(CONFIG_NF_SOCKET_IPV6)
+ 	case NFPROTO_IPV6:
+@@ -91,9 +93,8 @@
+ 		return -EOPNOTSUPP;
+ 	}
+ 
+-	priv->dreg = nft_parse_register(tb[NFTA_SOCKET_DREG]);
+-	return nft_validate_register_store(ctx, priv->dreg, NULL,
+-					   NFT_DATA_VALUE, len);
++	return nft_parse_register_store(ctx, tb[NFTA_SOCKET_DREG], &priv->dreg,
++					NULL, NFT_DATA_VALUE, len);
+ }
+ 
+ static int nft_socket_dump(struct sk_buff *skb,

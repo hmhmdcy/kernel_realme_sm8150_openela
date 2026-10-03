@@ -8,14 +8,12 @@ revision=cd739c78802333455391df973db17d9f28328b83
 [[ -x "$CLANG_DIR/bin/clang" ]]
 export PATH="$CLANG_DIR/bin:$PATH"
 export LD_LIBRARY_PATH="$CLANG_DIR/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-out="${OUT_DIR:-$source_root/out-extensions}"
+out="${OUT_DIR:-$source_root/out-ksunext}"
 args=(ARCH=arm64 LLVM=1 LLVM_IAS=1 CLANG_TRIPLE=aarch64-linux-gnu-
       CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi-
       CROSS_COMPILE_COMPAT=arm-linux-gnueabi- CC=clang LD=ld.lld
-      LOCALVERSION=-droidspaces-lr2-ksu3-ext-io
-      KERNELRELEASE=4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-io
+      LOCALVERSION=-droidspaces-v6.6.0-podman2-lr2-ksu3
+      KERNELRELEASE=4.14.356-openela-rc1-perf-droidspaces-v6.6.0-podman2-lr2-ksu3
       KSU_VERSION_OVERRIDE=33304 KSU_VERSION_TAG_OVERRIDE=v3.4.0-legacy-cd739c7)
-export KBUILD_BUILD_USER=rmx1931 KBUILD_BUILD_HOST=codex-wsl KBUILD_BUILD_VERSION=1
-export KBUILD_BUILD_TIMESTAMP='2026-10-03 00:00:00 UTC'
-make -C "$source_root" O="$out" "${args[@]}" rmx1931_droidspaces_defconfig
+make -C "$source_root" O="$out" "${args[@]}" rmx1931_ksunext3_defconfig
 make -C "$source_root" O="$out" "${args[@]}" -j"${JOBS:-4}" Image.gz-dtb modules

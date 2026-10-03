@@ -1,0 +1,43 @@
+{
+  "base_publication_commit": "7c423d675865bd2642ae5f523d72c64dad5dcd2c",
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-io",
+  "boot_sha256": "47d9ee609d4c28a0c9cae423bb25f72d4490d5efb1c3b8f91942098ad9a45ee5",
+  "runtime_passed": true,
+  "selinux": "Enforcing",
+  "official_capabilities_passed": 27,
+  "functional_probes_passed": 19,
+  "probe_record_sha256": {
+    "identity": "78d64902d0aa8c4e9c3027a07422b8324376a8e098169531ef2a9d0c27594d12",
+    "erofs": "aea40173267cb8c0f800f940148e2f3e9f2efbb725b5a0cde615ab6f14a585e2",
+    "binfmt": "1cb70ff32306becd6d350a2b8633a2d20be0aa43324de86f39f740881fa1b3c2",
+    "wireguard": "f0d110a60ce09fd42bc35068a695d99325b512748d280b4855ebff5d326d0552",
+    "lxc": "1a405bd06c55cfe2b30b792b0176283bf5c8fd4c486fd4dd62aa77ca795985e5",
+    "rootful-build": "3ff2eb07cd4c109400a22ec85e8427c0f37d216ad37046044e43c06b94c40950",
+    "rootless-build": "0bdb2e7b709f8a2365e4171d0c472497409c770a380c28be86cc41244d67686e",
+    "sockets": "0bf5a0702988658096fca3c5722965143f3f8f056a327d5f774a84d7fddfa8ba",
+    "squashfs": "2e859889643c5cc49389c940e1c5e225d325bc7d6683d4d99f34181ee102cfaa",
+    "rootful-functional": "af03953f403e01a3eaca227a01a142beef0d626aa4f0abe9b9b20b0077e80de1",
+    "rootful-memory": "7199f31568116ab0222738238da49e0c3d83b074362e45c93bb873751339db02",
+    "rootful-pids": "bd8fc3c312e83c5ed85719d6b71eeb934efb6f56ef54867b819237213af00801",
+    "rootless-functional": "fc0efe41863435282ce49a10a0baa635bf2f2012255b5eb04b8b3a1858f3b296",
+    "rootless-memory": "42b3e95d80ddb19546844b9be4f5a08e49c31953035c51333e598b1bd852a0ae",
+    "rootless-pids": "27804fc1727f14b8135c8cd260a056c166aa1f2d15434a270cd17d6cd3c2fca8",
+    "bbr": "940101949987270420fea27fa6827faba04a8af61e21605eff5564fdc873f638",
+    "checkpoint": "dc3128feb4dbc88f8308711caf97c9841a0716eb11fc04c2b53cdfe49531518e",
+    "nft": "c203a6e20e59f5827f32a6cee40b007db18629275ebaf2eed7d886d2baf4222c",
+    "io": "12c42a76e9027dbdd4c6ec98ecdf371c21b32b9233bdb57574c2c11189e9995f"
+  },
+  "wifi_passed": true,
+  "kernel_fatal_errors_observed": [],
+  "limitations": [
+    "Individual camera/display/sensor hardware certification not completed",
+    "LXC device BPF filtering not verified",
+    "panic retention not verified",
+    "Whole-container checkpoint restore not verified",
+    "BBR performance/battery comparison not performed",
+    "Guest V2 io.max unavailable",
+    "CRIU requires an explicit privileged runner; normal guest dump blocked by seccomp",
+    "Bootloader reset marker was not retained"
+  ],
+  "accepted_at": "2026-10-03T06:26:03.585690+00:00"
+}

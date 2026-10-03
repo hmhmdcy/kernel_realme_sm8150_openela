@@ -25,19 +25,30 @@ DS = '/data/local/tmp/rmx1931-droidspaces-check'
 
 def device():
     adb = [str(ROOT / 'tools/platform-tools/adb.exe')]
-    for attempt in range(6):
+    for attempt in range(20):
         rows = [r.split() for r in subprocess.check_output(adb + ['devices'], text=True, timeout=15).splitlines()[1:] if r.strip()]
         if len(rows) > 1 or any(len(r) != 2 or r[1] not in {'device', 'offline'} for r in rows):
             raise RuntimeError('Unexpected or unauthorized ADB device state')
         ids = [r[0] for r in rows if r[1] == 'device']
         if len(ids) == 1:
             break
-        if attempt < 5:
+        if attempt < 19:
             time.sleep(1)
     if len(ids) != 1:
         raise RuntimeError('Exactly one authorized device is required')
     adb += ['-s', ids[0]]
-    model = subprocess.check_output(adb + ['shell', 'getprop ro.product.device'], text=True).strip()
+    # Model reads are safe to retry across a short USB/ADB transport closure.
+    # Mutating commands below retain their stricter no-replay policy.
+    for attempt in range(4):
+        model_read = subprocess.run(adb + ['shell', 'getprop ro.product.device'],
+                                    capture_output=True, text=True, timeout=15)
+        if model_read.returncode == 0:
+            break
+        if attempt < 3:
+            time.sleep(1)
+    if model_read.returncode:
+        raise RuntimeError('ADB model read failed: ' + model_read.stderr.strip())
+    model = model_read.stdout.strip()
     if model not in {'RMX1931', 'RMX1931CN'}:
         raise RuntimeError('Unexpected device model')
     return adb
@@ -60,12 +71,31 @@ def guest_info(adb):
     raise RuntimeError('Guest info is unavailable or malformed: ' + result.stderr.decode(errors='replace'))
 
 
+def read_root(adb, command, timeout=30):
+    """Read-only root queries can retry a short USB closure; never use for mutations."""
+    for attempt in range(4):
+        result = subprocess.run(adb + ['exec-out', 'su', '-c', command], capture_output=True, timeout=timeout)
+        if result.returncode == 0:
+            return result.stdout
+        if not any(word in result.stderr for word in (b'not found', b'closed', b'offline')):
+            break
+        if attempt < 3:
+            time.sleep(1)
+            if device()[-1] != adb[-1]:
+                raise RuntimeError('ADB target changed during read-only reconnection')
+    raise RuntimeError('Read-only query failed (exit ' + str(result.returncode) + '): ' + result.stderr.decode(errors='replace'))
+
+
 def collect_service(adb, label, timeout):
     """Read an existing service result through the verified guest's proc root."""
     info = guest_info(adb)
     work = '/proc/' + str(info['pid']) + '/root/tmp/rmx1931-tests/service-' + label
     def read(text):
-        return subprocess.run(adb + ['exec-out', 'su', '-c', text], capture_output=True, timeout=15)
+        try:
+            output = read_root(adb, text, timeout=15)
+            return subprocess.CompletedProcess([], 0, output, b'')
+        except RuntimeError as error:
+            return subprocess.CompletedProcess([], 1, b'', str(error).encode())
     guard = read('set -e; test -f /proc/' + str(info['pid']) + '/root/etc/droidspaces; test -d ' + work + '; test ! -L ' + work)
     if guard.returncode:
         raise RuntimeError('Service result directory is unverified')
@@ -121,6 +151,13 @@ def main():
     if not args.label.replace('-', '').replace('_', '').isalnum():
         raise RuntimeError('Invalid report label')
     adb = device()
+    script_digest = None
+    identity = None
+    if args.action in {'run', 'run-file', 'collect-service'}:
+        observed = read_root(adb, 'uname -r; cat /proc/sys/kernel/random/boot_id', timeout=15).decode().splitlines()
+        if len(observed) != 2 or not re.fullmatch(r'[a-f0-9-]{36}', observed[1]):
+            raise RuntimeError('Kernel/boot identity cannot be recorded')
+        identity = {'kernel': observed[0], 'boot_id': observed[1]}
     if args.action == 'prepare':
         archive = ROOT / 'tools/downloads/droidspaces/Ubuntu-24.04-Minimal-Droidspaces-rootfs-aarch64-20260920-v20260920-040926.tar.xz'
         digest = 'aa3c7fbd7ec7a905704bb79c374d75f10af7a9a5ee2ddab5e9439fa8035b2bd3'
@@ -173,6 +210,7 @@ def main():
         checksum = subprocess.check_output(adb + ['shell', 'su -c ' + shlex.quote(copy_command)]).decode().split()[0]
         if checksum != hashlib.sha256(content).hexdigest():
             raise RuntimeError('Script transfer checksum mismatch')
+        script_digest = checksum
         command = shlex.join([DS, '--name=' + NAME, 'run', '/bin/sh', '/tmp/rmx1931-tests/' + args.label + '.sh', *args.script_arg])
     elif args.action == 'run':
         if not args.command:
@@ -224,6 +262,10 @@ def main():
               'stderr': errors}
     if args.guest_service or args.action == 'collect-service':
         report['execution'] = 'guest systemd service; durable log and explicit exit status'
+    if identity:
+        report.update(identity)
+    if script_digest:
+        report['script_source_sha256'] = script_digest
     (directory / (args.label + '.json')).write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False, indent=2), flush=True)
     raise SystemExit(result.returncode)

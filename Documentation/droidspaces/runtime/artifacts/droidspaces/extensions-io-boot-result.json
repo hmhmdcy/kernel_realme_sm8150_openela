@@ -1,0 +1,6 @@
+{
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-io",
+  "boot_sha256": "47d9ee609d4c28a0c9cae423bb25f72d4490d5efb1c3b8f91942098ad9a45ee5",
+  "running_config_matches": true,
+  "selinux": "Enforcing"
+}

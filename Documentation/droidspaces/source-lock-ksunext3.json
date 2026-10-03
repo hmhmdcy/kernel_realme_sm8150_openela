@@ -1,0 +1,152 @@
+{
+  "scope": "RMX1931CN crDroid16 / Android16 kernel and prepared Ubuntu24.04.5 Podman guest",
+  "kernel_base": {
+    "repository": "https://github.com/cyborgdc2000/kernel_realme_sm8150",
+    "branch": "lineage-23.0-ksunext",
+    "commit": "1a5720a5213b093c4cd54a7d8db5c5eeed2ca344"
+  },
+  "publication": {
+    "repository": "https://github.com/hmhmdcy/kernel_realme_sm8150_openela",
+    "branch": "codex/rmx1931-ksunext3",
+    "previous_publication_commit": "3581d82f62d17ea191bc28208158d411ef1c4f8c",
+    "fork_network_source": "cyborgdc2000/kernel_realme_sm8150"
+  },
+  "ksunext": {
+    "commit": "cd739c78802333455391df973db17d9f28328b83",
+    "all_git_blobs_match": true,
+    "files": 91,
+    "archive_sha256": "5bcb584a8d36735159454faaa3e22a2b73a0b1c293ab14afb58027a4ee3de9a3",
+    "commit_count": 3015,
+    "kernel_version": 33304,
+    "manager_version": "v3.4.0",
+    "manager_version_code": 33294,
+    "manager_apk_sha256": "50339a93c0f812b8a72c1a387a1b441891e3df0f20b2d9daf80fd798d04b3de8",
+    "latest_release_url": "https://github.com/KernelSU-Next/KernelSU-Next/releases/tag/v3.4.0",
+    "kernel_branch": "legacy",
+    "kernel_version_tag": "v3.4.0-legacy-cd739c7"
+  },
+  "compiler": "AOSP clang-r547379 / 20.0.0",
+  "tested_kernel_release": "4.14.356-openela-rc1-perf-droidspaces-v6.6.0-podman2-lr2-ksu3",
+  "tested_boot_sha256": "9588a95055bf35ced553297541a4e703b038451dcdfa775281b1f8c9f7a0bc58",
+  "tested_kernel_sha256": "8330300492f9b550d5a8588fa0f8e715e6f8e38f9ade7f54dc26f553c9bda5c9",
+  "resolved_config_sha256": "6b3880005d9313c776ed33b854ef3cd3cfba1dddbbd16b66e339fb3ce4c61f52",
+  "dtb_sha256": "05ea54c5384444da7f79b4877ba7ca37edc9bada676f847628b73b74fc2d2e58",
+  "ramdisk_sha256": "23cb0561577eaccb084177caa3f3df64b71db3e5b08d80e83fc2b70d2e7c843b",
+  "modified_source_sha256": {
+    "fs/devpts/inode.c": "591deb3c6a6eed2be600bbcb5d68dc6e5568c1cad17379b1c02f335d5715c68b",
+    "fs/exec.c": "7f3130f3ba428f4feff5439da461213f1ac46c1d57d76ca77f64dbcb864f39f8",
+    "fs/fuse/acl.c": "e1e72acd57f471c341aee2cdb99f39d5676a1dafadcb75f800b39949fada8bdd",
+    "fs/fuse/cuse.c": "c983d84405d974dbcc505a34612398f0ca9eb551cc4b9afcf76bfd99b7365fc5",
+    "fs/fuse/dev.c": "82e9ccd9b21be25f32f36f32f716dcd22cb5c972a2b922baa260e98a00856d00",
+    "fs/fuse/dir.c": "5d64e8589f80eac0ed6fd349eb6be4242792ef7ea73d037e6cf5a7ebd27ff5c4",
+    "fs/fuse/fuse_i.h": "a6a7faa8c37af66d68eb76415c67160429489195794cd9f4fbc476eb7f9dc169",
+    "fs/fuse/inode.c": "aadf790ab2d2543ffe1004d2c1f43b57798364ad7cf0f52eddc372558e1a30c4",
+    "fs/fuse/xattr.c": "83bae93d83a24db21b41a10baa05309bbb1aca4c0eabd3d9d7fad2105fb930d6",
+    "fs/proc/base.c": "162c934de37d6e699836b7b178a4f0956dfb0b9ad72d36963dee06ddd5bb59a6",
+    "fs/read_write.c": "286f452fc4ae0b78542bb0fcfd73f5c15fc3289cbc612e8ececef49428435871",
+    "fs/stat.c": "59c8373c789b7cddc41c55781af935bf158ad5b7b9f7dea5c851c4436b2a48e8",
+    "include/linux/seccomp.h": "323e1ae2d066800a9f47328e6098332c819866a2fef81574996900c66ca25e0e",
+    "kernel/bpf/syscall.c": "20cf0fc3b87c3406640583f759a108da2b83d7aa671d37b6617762c02811dfc9",
+    "kernel/cgroup/cgroup.c": "75aa734d950a6828d154e972754464699c7c2a092b85be0499e72aeabc84ff70",
+    "kernel/reboot.c": "55b2941fcaeefee220b28195953361aeb0142cbf58ea213f2f7bdd4ed1e27d8d",
+    "security/selinux/hooks.c": "fe22e190af7132933ede364a37fbf866c2fddc6f05e5a9884a48622dcc9211bc",
+    "security/selinux/include/objsec.h": "ee3106b43a1b36dfc73d5c7aa2409a1174a7b66a7bf25ae48b3723a09a519f0b",
+    "security/selinux/selinuxfs.c": "f2b1fd5e10b6eb37a6efeb2b49ed7eb5f2d66005f340708e43f3a2ae1922ca28",
+    "security/selinux/xfrm.c": "fa876f2211d97bf29b9ee4fd9ddbafe4dc6bc4d6616ee12763656b3d2a82acd9"
+  },
+  "source_archive_audit": {
+    "base_commit": "1a5720a5213b093c4cd54a7d8db5c5eeed2ca344",
+    "base_archive_files_checked": 73108,
+    "unexpected_source_deltas": [],
+    "tar_normalized_equivalent_symlinks": [
+      "tools/testing/selftests/powerpc/primitives/asm/asm-compat.h"
+    ],
+    "scope": "Every base archive file and symlink; KSU gitlink and publication defconfig are locked separately"
+  },
+  "runtime_helpers_sha256": {
+    "start_podman_guest.py": "840182970d71c72376279d42accf7b0bb1ff1b67ad7e3fb7584e32c07d69db16",
+    "device_runtime.py": "bbf3a0e57ed99cbd107cd0c6c307961594b50d761c7c20aa85467707b8ed9f2b",
+    "delegate_guest_cgroup_v2.py": "5cf1de4f1e047aa0b6ae1987b4d8722d4fdf347ae709a16900adfc271c422b9e",
+    "prepare_guest_sandbox.py": "9cbbccf011dec5a0e238fb0b27d78711e367adf4c6d0d9b183b2679e22bcc86c",
+    "configure_podman_user_session.sh": "f1c3d747c9c848a8162749bcc90f1191f981a2a472540ef262461c650f54f39a",
+    "install_guest_podman_oom_wrapper.sh": "bce382f7f6547b36321be749cf699e5286909ff38272b72cdd971f7daa8eec34",
+    "probe_profile_after_restart.sh": "401ecb804c51edbb3d9ea3d11db7d0d84792d115cdfa9f736e09fdfa6b0c46ae",
+    "probe_podman_functional.sh": "21a9398c882a08b02fdbcd48bffe24336beaa7902e0c4bedf8d0afd5826edd34",
+    "probe_podman_memory_enforcement.sh": "79fbc97c39ee2ea8933a9ac2419736d666a7cdc8f087193a9478073a09def4aa",
+    "probe_podman_pids_enforcement.sh": "7dee3c7afbdc00b5be754dc357757074ab4f91ccdd2137d698d8ea5816072003",
+    "probe_cmdline_regression.sh": "49e911a9bedabc3045bbbeb987f0a74ecd128e3c57ed085f88cd612b5d1745a7",
+    "probe_podman_rootful_build.sh": "51492af93ac155389cdc94938569150e3eef7700dc366f4fd96891ae2047778a",
+    "probe_rootless_tcp.sh": "4eb4bb1ec3532b32bab17900ee3b85c0d955e1acc68b0924f5c677afe623d60f",
+    "probe_lowrisk_socket_diag.sh": "59bbb353999ab3f998ad98d666d014780d3b6e59ac9b706bfa01827e7d27f997",
+    "probe_lowrisk_squashfs.sh": "58cb238d04602d7dde8c28c2b98530239050a072cbb2f370e2edbb533ccedbba"
+  },
+  "runtime_acceptance": {
+    "ksunext-rootful-functional": {
+      "result": "pass",
+      "private_record_sha256": "5201a24878be9d9c31bf0f7dab2f906e21b30e65520ac0f4bab96f47cbc98b55"
+    },
+    "ksunext-rootful-memory": {
+      "result": "pass",
+      "private_record_sha256": "30045149effe7186b93c7df258bf8b35e1d67b979f1a4e71a5e0dc0fb9b0342a"
+    },
+    "ksunext-rootful-pids": {
+      "result": "pass",
+      "private_record_sha256": "76a40ff5ac1021c62a40de4531a7a2407c8a14839786a68bd04a09ac79ee0365"
+    },
+    "ksunext-rootless-functional": {
+      "result": "pass",
+      "private_record_sha256": "ae08dc03525bca1fbefeb2036f99ea9e922a3876fecab39b4c29283c8f5078ed"
+    },
+    "ksunext-rootless-memory": {
+      "result": "pass",
+      "private_record_sha256": "f03d11b330bc54709b8b93a77fcb021c42546c347e727b0c37fa9868b238e4b2"
+    },
+    "ksunext-rootless-pids": {
+      "result": "pass",
+      "private_record_sha256": "c59cbc659b479bda31f126eb901fa43b1878fcec0cfb88ad17eb72bde658aa17"
+    },
+    "ksunext-rootful-build": {
+      "result": "pass",
+      "private_record_sha256": "c8376f4bdb30535ccfed03acf35f61e4d51ec6a195120e42ddfd7aa096ad69ce"
+    },
+    "ksunext-rootless-build": {
+      "result": "pass",
+      "private_record_sha256": "9c4a1a36dc17781d310be7fa75c8bcd6ca1e7465a0b98d68ac9cd573c7788a4d"
+    },
+    "ksunext-sockets": {
+      "result": "pass",
+      "private_record_sha256": "2828c364fef66e2d36ecad1b3c3cba40fad796b04adb8e63145e2856772a29bb"
+    },
+    "ksunext-squashfs-ready": {
+      "result": "pass",
+      "private_record_sha256": "b3e55df75f8f57da3a563f7732432782b245348b29a0ff748d8678e0334230a1"
+    },
+    "podman-profile-20261002T192104Z-ready": {
+      "result": "pass",
+      "private_record_sha256": "5347e086be09981852d763a707c27ec8079616203e53b049fb3cb9022770bcb8"
+    }
+  },
+  "accepted_at": "2026-10-03T03:27:29.062776+08:00",
+  "official_capabilities_passed": 27,
+  "selinux": "Enforcing",
+  "manager_working_and_root_pty_passed": true,
+  "existing_shell_root_and_droidspaces_module_preserved": true,
+  "export_crc_summary": {
+    "baseline_symbols": 12166,
+    "candidate_symbols": 12166,
+    "missing_existing_symbols": 0,
+    "changed_existing_symbols": 8183,
+    "added_symbols": 0
+  },
+  "external_module_abi": "Changed by upstream seccomp compatibility backport; rebuild external .ko files",
+  "hardware_scope": "Boot and driver logs checked; historical physical confirmations apply to earlier kernels",
+  "historical_podman2_lock": "source-lock-podman2.json",
+  "private_boot_backups_root_state_and_raw_logs_published": false,
+  "known_limitations": [
+    "External kernel module CRCs changed; no external modules are loaded on this phone",
+    "Four existing section mismatch warnings remain in the build",
+    "DroidSpaces daemon-only module works; no mount metamodule installed",
+    "Physical hardware and long-term stability were not individually re-certified",
+    "Docker daemon, CPU quota, complete nftables and IPv6 NAT remain outside acceptance"
+  ]
+}

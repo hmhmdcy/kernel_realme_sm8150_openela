@@ -5,6 +5,7 @@ test -f /etc/droidspaces
 test "$(id -u)" = 0
 case "$(uname -r)" in
     4.14.356-openela-rc1-perf-droidspaces-v6.6.0-podman2|4.14.356-openela-rc1-perf-droidspaces-v6.6.0-podman2-lowrisk2|4.14.356-openela-rc1-perf-droidspaces-v6.6.0-podman2-lr2-ksu3) ;;
+    4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-utilities|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-bbr|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-checkpoint|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-network|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-io) ;;
     *) exit 1 ;;
 esac
 temporary=/tmp/rmx1931-tests/podman-oom-wrapper

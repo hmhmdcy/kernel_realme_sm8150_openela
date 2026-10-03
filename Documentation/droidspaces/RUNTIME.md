@@ -44,4 +44,6 @@ guest 包需包含 podman、crun、fuse-overlayfs、slirp4netns、uidmap、dbus-
 
 脚本只配置本 guest 的 NAT/allow-sandboxing、cgroup 委派、sysfs seed、用户服务与 Podman OOM 入口；不会刷分区。run-file 仅接受该工作区 scripts 中的 shell 文件，并核对传输摘要。现有运行 guest 上再次执行准备会重启用户服务并迁移 rootless pause；先停止自己的工作负载再执行。
 
+当前累计扩展镜像 `4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-io` 也已验收。启动脚本要求本地 `extensions-io-boot-result.json` 与对应 `boot-images/ext-io-candidate-check.json`，并回读 boot SHA；运行配置由部署验收核对。为 CRIU 仅开放隔离 guest 的 ns_last_pid 和三个 IPC next_id 文件，其他 proc/sys 仍只读，guest seccomp 保留。普通 guest 的 `criu dump` 仍受 seccomp 限制；特权单进程验收入口是 `python scripts/probe_checkpoint_privileged.py --label <新的测试名字>`，它不是通用容器迁移工具。新增功能、外部模块 CRC 变化与 io.max 边界见 [扩展验收](EXTENSIONS.md)。
+
 验收 probe 会创建并清理专用测试容器/卷，镜像名 `localhost/rmx1931-probe:1` 由构建测试准备。不要在有同名生产工作负载的环境中直接运行 probe。

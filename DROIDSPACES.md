@@ -1,5 +1,3 @@
-# Realme X2 Pro DroidSpaces / Podman
+# Realme X2 Pro kernel extensions
 
-Current accepted kernel includes KernelSU Next legacy cd739c7 (33304 / UAPI 4), manager/ksud v3.4.0 and the LowRisk2 configuration. Rootful/rootless Podman and DroidSpaces checks passed on RMX1931CN / crDroid 16. See [KSU update acceptance](Documentation/droidspaces/KSUNEXT-STATUS.md).
-
-Kernel adaptation and tested runtime profile: [Documentation/droidspaces](Documentation/droidspaces/README.md).
+Current cumulative extensions kernel is accepted on RMX1931CN/crDroid16. See [build/runtime/acceptance](Documentation/droidspaces/README.md) and [flashing guide](Documentation/droidspaces/FLASHING.md).

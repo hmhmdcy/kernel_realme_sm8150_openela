@@ -1,0 +1,11 @@
+{
+  "base_commit": "7c423d675865bd2642ae5f523d72c64dad5dcd2c",
+  "base_variant": "ksunext",
+  "stages": [
+    {"name": "utilities", "order": 1, "risk": "low-medium", "fragments": ["extensions-utilities.config"], "allowed_prefixes": ["CONFIG_BINFMT_MISC", "CONFIG_EROFS_"], "allowed_keys": ["CONFIG_LIBCRC32C", "CONFIG_LZ4_DECOMPRESS"], "linked_symbols": ["init_misc_binfmt", "erofs_module_init"]},
+    {"name": "bbr", "order": 2, "risk": "medium", "fragments": ["extensions-bbr.config"], "allowed_prefixes": ["CONFIG_TCP_CONG_", "CONFIG_DEFAULT_"], "allowed_keys": ["CONFIG_NET_SCH_FQ"], "linked_symbols": ["bbr_register", "fq_module_init"]},
+    {"name": "checkpoint", "order": 3, "risk": "medium-high", "fragments": ["extensions-checkpoint.config"], "allowed_prefixes": [], "allowed_keys": ["CONFIG_CHECKPOINT_RESTORE", "CONFIG_PROC_CHILDREN", "CONFIG_FHANDLE"], "linked_symbols": ["proc_tid_children_operations"]},
+    {"name": "network", "order": 4, "risk": "high", "fragments": ["extensions-network.config"], "allowed_prefixes": ["CONFIG_NFT_", "CONFIG_NF_TABLES"], "allowed_keys": ["CONFIG_NF_NAT_IPV6", "CONFIG_NF_NAT_MASQUERADE_IPV6", "CONFIG_IP6_NF_NAT", "CONFIG_IP6_NF_TARGET_MASQUERADE", "CONFIG_NF_SOCKET_IPV4", "CONFIG_NF_SOCKET_IPV6", "CONFIG_NF_REJECT_IPV4", "CONFIG_NF_REJECT_IPV6", "CONFIG_NF_DUP_IPV4", "CONFIG_NF_DUP_IPV6", "CONFIG_NF_DUP_NETDEV", "CONFIG_NF_LOG_ARP", "CONFIG_NF_LOG_BRIDGE", "CONFIG_NF_LOG_NETDEV"], "linked_symbols": ["nf_tables_ipv4_init", "nf_tables_ipv6_init", "nft_ct_module_init", "nft_masq_ipv6_module_init"]},
+    {"name": "io", "order": 5, "risk": "highest", "fragments": ["extensions-io.config"], "allowed_prefixes": ["CONFIG_BLK_DEV_THROTTLING"], "allowed_keys": [], "linked_symbols": ["blk_throtl_bio", "throtl_init"]}
+  ]
+}

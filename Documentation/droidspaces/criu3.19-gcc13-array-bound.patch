@@ -1,0 +1,11 @@
+--- a/criu/net.c
++++ b/criu/net.c
+@@ -374,7 +374,7 @@
+ 	if (opts.weak_sysctls || op == CTL_READ)
+ 		flags = CTL_FLAGS_OPTIONAL;
+ 
+-	for (i = 0; i < *n; i++) {
++	for (i = 0; i < ARRAY_SIZE(unix_conf_entries); i++) {
+ 		snprintf(path[i], MAX_CONF_UNIX_PATH, CONF_UNIX_FMT, unix_conf_entries[i]);
+ 		req[i].name = path[i];
+ 		req[i].flags = flags;

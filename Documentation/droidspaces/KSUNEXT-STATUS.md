@@ -1,3 +1,7 @@
+# Historical KSU3 baseline
+
+Latest cumulative extension acceptance: [EXTENSIONS.md](EXTENSIONS.md). This page preserves the previously published KSU3 baseline.
+
 # KernelSU Next v3 update acceptance - 2026-10-03
 
 The updated kernel was compiled, flashed to boot only, booted on RMX1931CN and verified. [Official manager/ksud v3.4.0](https://github.com/KernelSU-Next/KernelSU-Next/releases/tag/v3.4.0) is paired with legacy commit [cd739c7](https://github.com/KernelSU-Next/KernelSU-Next/commit/cd739c78802333455391df973db17d9f28328b83), required for this Linux 4.14 non-GKI manual integration. Kernel version changed from 12780 to 33304 / UAPI 4. The local version tag is v3.4.0-legacy-cd739c7.
