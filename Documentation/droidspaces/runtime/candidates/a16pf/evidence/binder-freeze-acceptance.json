@@ -1,0 +1,65 @@
+{
+  "passed": true,
+  "binder_freeze_callbacks_accepted": true,
+  "stage": "harden5-binder-freeze-fix",
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h5bf2",
+  "boot_id": "db5703c3-a205-47fb-9bda-c6f077eb0ee6",
+  "boot_sha256": "7355ff5724ffb6b77baa551d9bf3d50118ab505fed49acc0537ad1211fb82f00",
+  "boot_verification_sha256": "5d4573a057a2c1ced103d600c445f2c5ff9579e6b5c96109178dfd5d5d26bb9f",
+  "build_audit_sha256": "acf10176599973d5bb20f02fd636ed9c139d63951a5387577375f7bbc12e6dd5",
+  "packaging_sha256": "798a0fbb4ab373f0712c80ba0a209d0130b396732b77eedad3b91203c65b7e4b",
+  "predecessor_stage5_acceptance_sha256": "a79370bf2d8e9b50002242b0cb4051522ec0eb56b6992431390bf4739980a45f",
+  "evidence": {
+    "native-callbacks-and-features": {
+      "path": "runtime/binder-freeze-callbacks-h5bf2-20261005.json",
+      "sha256": "77da13fd50ca38f9c1ac64201c11854c84df3ed9be3e2529ccf8cd74be6794cb"
+    },
+    "android16-public-api": {
+      "path": "runtime/binder-public-api-h5bf2-20261005.json",
+      "sha256": "1af7acf28f46df476b3043f1c51324093a7078dc79d50bab8eb946a489540b21"
+    },
+    "filter-preservation": {
+      "path": "runtime/binder-filter-h5bf2-20261005.json",
+      "sha256": "1495de1d14a8be13d03eb8add9eca5ac3c20635d2481ebb538a20687b61ce0c7",
+      "source_path": "scripts/probe_container_seccomp_setresuid.sh",
+      "source_sha256": "8fd6f22a20a55a896cd6f01de4c36f8da5a339c7a6f004c313c00a822441b746"
+    },
+    "native-cpu-cpuset": {
+      "path": "runtime/binder-native-cpu-h5bf2-20261005.json",
+      "sha256": "2dc0ac2dc0f9d1ca3da5f1afc27e1510b34db1eaf5ebf320af99fbcd5cb1615c",
+      "source_path": "scripts/probe_native_cpu_podman.sh",
+      "source_sha256": "761fd208cb19b0b0c4f3bb6148b1e5887820c1647a066a55c2fd7e5b41d8fb49"
+    },
+    "policy-crun": {
+      "path": "runtime/binder-policy-crun-h5bf2-20261005.json",
+      "sha256": "fa832c5d45d62ab11f6d8fb76c42d5c4ba6490550ce1937aedaea986d342a7ae",
+      "source_path": "scripts/probe_resource_policy_smoke.sh",
+      "source_sha256": "5d3a10bf12142c2a98b4404731da558c5edf34c5531ffcb7f63b8cf1cf7f4e43"
+    },
+    "policy-runc": {
+      "path": "runtime/binder-policy-runc-h5bf2-20261005.json",
+      "sha256": "8fa8f385b77174ecd80d50f744930dc9f658e67bbee028808609fa3dfb7c93c2",
+      "source_path": "scripts/probe_resource_policy_smoke.sh",
+      "source_sha256": "5d3a10bf12142c2a98b4404731da558c5edf34c5531ffcb7f63b8cf1cf7f4e43"
+    },
+    "host-health": {
+      "path": "runtime/binder-host-health-h5bf2-20261005.json",
+      "sha256": "8cac52f0578b1a6716f262b0d9ec478814502310247aa20388a650a9f488d6d3",
+      "source_path": "scripts/probe_binder_host_health.py",
+      "source_sha256": "8fcdc97443183d88763417fe456719a4721d20fdbad632b1be901b67e954e290"
+    }
+  },
+  "module_export_crcs_preserved": true,
+  "scope": "Independent Binderfs notifications and read-only feature discovery; actual Android 16 public API subscription/state changes/removal/death plus affected Linux container regression.",
+  "limitations": [
+    "Existing freeze ioctl uses host PID semantics.",
+    "Extended-error and transaction-report interfaces were not added.",
+    "Historical native baseline EINVAL used an invalid packed ABI and is not accepted as proof of a missing callback.",
+    "No claim of performance or battery improvement."
+  ],
+  "complete_android16_desktop_status": "paused by user; not deployed or accepted",
+  "remaining_current_scope": [
+    "LMKD/group PSI and container memory-policy linkage",
+    "Current-ROM eBPF interface requirements"
+  ]
+}

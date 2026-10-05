@@ -9529,7 +9529,7 @@ static void update_blocked_averages(int cpu)
 		/* Propagate pending load changes to the parent, if any: */
 		se = cfs_rq->tg->se[cpu];
 		if (se && !skip_blocked_update(se))
-			update_load_avg(se, 0);
+			update_load_avg(se, UPDATE_TG);
 	}
 	update_rt_rq_load_avg(rq_clock_task(rq), cpu, &rq->rt, 0);
 #ifdef CONFIG_NO_HZ_COMMON
@@ -12330,16 +12330,26 @@ static void propagate_entity_cfs_rq(struct sched_entity *se)
 {
 	struct cfs_rq *cfs_rq;
 
+	/* Decay removed load even when a sleeping task never enqueues here. */
+	list_add_leaf_cfs_rq(cfs_rq_of(se));
+
 	/* Start to propagate at parent */
 	se = se->parent;
 
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
 
-		if (cfs_rq_throttled(cfs_rq))
-			break;
+		if (!cfs_rq_throttled(cfs_rq)) {
+			update_load_avg(se, UPDATE_TG);
+			list_add_leaf_cfs_rq(cfs_rq);
+			continue;
+		}
 
-		update_load_avg(se, UPDATE_TG);
+		/* 4.14 has a void list helper; use its branch-complete invariant. */
+		list_add_leaf_cfs_rq(cfs_rq);
+		if (rq_of(cfs_rq)->tmp_alone_branch ==
+		    &rq_of(cfs_rq)->leaf_cfs_rq_list)
+			break;
 	}
 }
 #else

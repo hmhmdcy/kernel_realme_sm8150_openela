@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Check extension Python, shell and Python heredoc bodies without running probes."""
 import ast
+import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,9 +21,35 @@ NAMES = ('audit_kernel_extensions.py', 'build_kernel_extensions.sh', 'prepare_ke
 NAMES += ('check_kernel_extension_runtime.py', 'record_extension_acceptance.py',
           'reboot_extension_retention.py', 'install_guest_podman_oom_wrapper.sh', 'probe_lowrisk_wifi.py',
           'prepare_guest_checkpoint.sh', 'probe_checkpoint_privileged.py')
+NAMES += ('accept_phone.py', 'test_runtime_acceptance.py', 'delegate_guest_cgroup_v2.py',
+          'probe_podman_functional.sh', 'probe_podman_memory_enforcement.sh')
+NAMES += ('audit_kernel_dualio.py', 'build_kernel_dualio.sh', 'prepare_dual_blkio.py',
+          'probe_checkpoint_management.py', 'control_podman_checkpoint.sh',
+          'probe_podman_checkpoint.sh', 'privileged_guest.py',
+          'set_container_cpu_quota.py', 'probe_container_cpu_quota.py',
+          'probe_container_cpu_fixture.sh', 'install_guest_cpu_runtime.sh',
+          'prepare_guest_cpu_mounts.sh', 'probe_guest_io_max.sh',
+          'probe_io_hierarchy_writeback.sh', 'probe_lxc_device_policy.sh',
+          'install_lxc_bpf_launcher.sh', 'probe_bind_propagation.sh',
+          'probe_external_tcp.py', 'probe_external_tcp_server.sh',
+          'probe_external_wireguard.py', 'probe_external_wireguard_guest.sh',
+          'probe_panic_retention.py')
+NAMES += ('audit_kernel_resources.py', 'build_kernel_resources.sh',
+          'record_remaining_acceptance.py', 'sync_dualio_source.py', 'run_dualio_final.py')
+NAMES += ('prepare_kernel_hardening.py', 'audit_kernel_hardening.py', 'build_kernel_hardening.sh',
+          'probe_container_lifecycle.sh', 'sync_hardening_source.py', 'record_hardening_acceptance.py')
+NAMES += ('rmx1931_resource_policy.py', 'oci_resource_entry.py', 'install_guest_resource_policy.py',
+          'test_resource_policy.py', 'probe_policy_oci_layout.sh', 'probe_resource_policy_smoke.sh')
+NAMES += ('probe_resource_policy_lifecycle.sh', 'probe_resource_policy_admission.sh')
+NAMES += ('stop_guest_resource_policy.sh',)
+NAMES += ('record_resource_policy_restart.py',)
+NAMES += ('record_resource_policy_acceptance.py',)
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--shell-directory', type=Path, help='Explicit directory containing sh/bash (Git for Windows or Linux tools)')
+    args = parser.parse_args()
     records = {}
     heredocs = children = 0
     def python(text, label):
@@ -40,7 +69,8 @@ def main():
             python(text, path.name)
         else:
             shell = 'bash' if text.startswith('#!/usr/bin/env bash') else 'sh'
-            subprocess.run([shell, '-n'], input=text.encode(), capture_output=True, check=True)
+            executable = str(args.shell_directory / (shell + ('.exe' if os.name == 'nt' else ''))) if args.shell_directory else (shutil.which(shell) or shell)
+            subprocess.run([executable, '-n'], input=text.encode(), capture_output=True, check=True)
             for match in re.finditer(r"<<['\"](PY|PYTHON)['\"]\n(.*?)\n\1(?:\n|$)", text, re.S):
                 python(match[2], path.name + ':heredoc')
                 heredocs += 1

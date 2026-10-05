@@ -11,10 +11,18 @@
 
 #if IS_ENABLED(CONFIG_CPUSETS)
 SUBSYS(cpuset)
+#if IS_ENABLED(CONFIG_RMX1931_DUAL_CPUSET)
+/* Device-local compatibility tree, keeping the ROM mount name. */
+SUBSYS(cpuset_legacy)
+#endif
 #endif
 
 #if IS_ENABLED(CONFIG_CGROUP_SCHED)
 SUBSYS(cpu)
+#if IS_ENABLED(CONFIG_RMX1931_DUAL_CPU)
+/* Personal legacy copy, retaining the Android mount name "cpu". */
+SUBSYS(cpu_legacy)
+#endif
 #endif
 
 #if IS_ENABLED(CONFIG_CGROUP_CPUACCT)
@@ -27,6 +35,10 @@ SUBSYS(schedtune)
 
 #if IS_ENABLED(CONFIG_BLK_CGROUP)
 SUBSYS(io)
+#if IS_ENABLED(CONFIG_RMX1931_DUAL_BLKIO)
+/* Device-local legacy copy; not a proposed upstream subsystem. */
+SUBSYS(blkio)
+#endif
 #endif
 
 #if IS_ENABLED(CONFIG_MEMCG)

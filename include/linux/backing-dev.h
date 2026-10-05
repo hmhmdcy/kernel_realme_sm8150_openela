@@ -272,6 +272,10 @@ static inline struct bdi_writeback *wb_find_current(struct backing_dev_info *bdi
 	struct cgroup_subsys_state *memcg_css;
 	struct bdi_writeback *wb;
 
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+	if (!blkcg_v2_selected(task_css(current, io_cgrp_id)))
+		return &bdi->wb;
+#endif
 	memcg_css = task_css(current, memory_cgrp_id);
 	if (!memcg_css->parent)
 		return &bdi->wb;

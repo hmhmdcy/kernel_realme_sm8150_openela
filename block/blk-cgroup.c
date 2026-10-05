@@ -186,7 +186,7 @@ static struct blkcg_gq *blkg_create(struct blkcg *blkcg,
 	}
 
 	wb_congested = wb_congested_get_create(q->backing_dev_info,
-					       blkcg->css.id,
+					       blkcg_congested_id(blkcg),
 					       GFP_NOWAIT | __GFP_NOWARN);
 	if (!wb_congested) {
 		ret = -ENOMEM;
@@ -991,7 +991,33 @@ static int blkcg_print_stat(struct seq_file *sf, void *v)
 	return 0;
 }
 
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+static u64 blkcg_v2_delegate_read(struct cgroup_subsys_state *css,
+				struct cftype *cft)
+{
+	return READ_ONCE(css_to_blkcg(css)->v2_delegate);
+}
+
+static int blkcg_v2_delegate_write(struct cgroup_subsys_state *css,
+				 struct cftype *cft, u64 value)
+{
+	/* Never let a delegated child disable an ancestor's IO enforcement. */
+	if (value != 1)
+		return -EINVAL;
+	WRITE_ONCE(css_to_blkcg(css)->v2_delegate, true);
+	return 0;
+}
+#endif
+
 static struct cftype blkcg_files[] = {
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+	{
+		.name = "v2_delegate",
+		.flags = CFTYPE_NOT_ON_ROOT,
+		.read_u64 = blkcg_v2_delegate_read,
+		.write_u64 = blkcg_v2_delegate_write,
+	},
+#endif
 	{
 		.name = "stat",
 		.flags = CFTYPE_NOT_ON_ROOT,
@@ -1064,7 +1090,7 @@ static void blkcg_css_free(struct cgroup_subsys_state *css)
 }
 
 static struct cgroup_subsys_state *
-blkcg_css_alloc(struct cgroup_subsys_state *parent_css)
+blkcg_css_alloc_common(struct cgroup_subsys_state *parent_css, bool legacy)
 {
 	struct blkcg *blkcg;
 	struct cgroup_subsys_state *ret;
@@ -1072,7 +1098,7 @@ blkcg_css_alloc(struct cgroup_subsys_state *parent_css)
 
 	mutex_lock(&blkcg_pol_mutex);
 
-	if (!parent_css) {
+	if (!parent_css && legacy) {
 		blkcg = &blkcg_root;
 	} else {
 		blkcg = kzalloc(sizeof(*blkcg), GFP_KERNEL);
@@ -1082,6 +1108,9 @@ blkcg_css_alloc(struct cgroup_subsys_state *parent_css)
 		}
 	}
 
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+	blkcg->v2_controller = !legacy;
+#endif
 	for (i = 0; i < BLKCG_MAX_POLS ; i++) {
 		struct blkcg_policy *pol = blkcg_policy[i];
 		struct blkcg_policy_data *cpd;
@@ -1129,6 +1158,24 @@ unlock:
 	mutex_unlock(&blkcg_pol_mutex);
 	return ret;
 }
+
+static struct cgroup_subsys_state *blkcg_css_alloc(struct cgroup_subsys_state *parent_css)
+{
+	return blkcg_css_alloc_common(parent_css, true);
+}
+
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+struct blkcg *blkcg_v2_root;
+EXPORT_SYMBOL_GPL(blkcg_v2_root);
+
+static struct cgroup_subsys_state *blkcg_v2_css_alloc(struct cgroup_subsys_state *parent_css)
+{
+	struct cgroup_subsys_state *css = blkcg_css_alloc_common(parent_css, false);
+	if (!parent_css && !IS_ERR(css))
+		blkcg_v2_root = css_to_blkcg(css);
+	return css;
+}
+#endif
 
 /**
  * blkcg_init_queue - initialize blkcg part of request queue
@@ -1261,21 +1308,46 @@ static void blkcg_bind(struct cgroup_subsys_state *root_css)
 			continue;
 
 		list_for_each_entry(blkcg, &all_blkcgs, all_blkcgs_node)
-			if (blkcg->cpd[pol->plid])
+			if (blkcg->cpd[pol->plid]
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+			    && blkcg->css.ss == root_css->ss
+#endif
+			   )
 				pol->cpd_bind_fn(blkcg->cpd[pol->plid]);
 	}
 	mutex_unlock(&blkcg_pol_mutex);
 }
 
-struct cgroup_subsys io_cgrp_subsys = {
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+struct cgroup_subsys blkio_cgrp_subsys = {
 	.css_alloc = blkcg_css_alloc,
 	.css_offline = blkcg_css_offline,
 	.css_free = blkcg_css_free,
 	.can_attach = blkcg_can_attach,
 	.bind = blkcg_bind,
-	.dfl_cftypes = blkcg_files,
 	.legacy_cftypes = blkcg_legacy_files,
 	.legacy_name = "blkio",
+};
+EXPORT_SYMBOL_GPL(blkio_cgrp_subsys);
+#endif
+
+struct cgroup_subsys io_cgrp_subsys = {
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+	.css_alloc = blkcg_v2_css_alloc,
+#else
+	.css_alloc = blkcg_css_alloc,
+#endif
+	.css_offline = blkcg_css_offline,
+	.css_free = blkcg_css_free,
+	.can_attach = blkcg_can_attach,
+	.bind = blkcg_bind,
+	.dfl_cftypes = blkcg_files,
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+	.legacy_name = "rmx_io",
+#else
+	.legacy_cftypes = blkcg_legacy_files,
+	.legacy_name = "blkio",
+#endif
 #ifdef CONFIG_MEMCG
 	/*
 	 * This ensures that, if available, memcg is automatically enabled
@@ -1457,7 +1529,12 @@ int blkcg_policy_register(struct blkcg_policy *pol)
 		WARN_ON(cgroup_add_dfl_cftypes(&io_cgrp_subsys,
 					       pol->dfl_cftypes));
 	if (pol->legacy_cftypes)
-		WARN_ON(cgroup_add_legacy_cftypes(&io_cgrp_subsys,
+		WARN_ON(cgroup_add_legacy_cftypes(
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+						  &blkio_cgrp_subsys,
+#else
+						  &io_cgrp_subsys,
+#endif
 						  pol->legacy_cftypes));
 	mutex_unlock(&blkcg_pol_register_mutex);
 	return 0;

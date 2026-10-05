@@ -1,0 +1,26 @@
+--- a/kernel/hook/setuid_hook.c
++++ b/kernel/hook/setuid_hook.c
+@@ -11,6 +11,8 @@
+ #include <linux/types.h>
+ #include <linux/uaccess.h>
+ #include <linux/uidgid.h>
++#include <linux/user_namespace.h>
++#include <linux/pid_namespace.h>
+ 
+ #include "policy/app_profile.h"
+ #include "policy/allowlist.h"
+@@ -26,6 +28,14 @@
+ 
+ int ksu_handle_setresuid(uid_t old_uid, uid_t new_uid)
+ {
++    /* Android UID allowlists must not clear OCI filters or inject manager
++     * handles in a container whose UID numbers overlap with Android's.
++     * Explicit host su/root-profile handling remains unchanged.
++     */
++    if (current_user_ns() != &init_user_ns ||
++        task_active_pid_ns(current) != &init_pid_ns)
++        return 0;
++
+     // we rely on the fact that zygote always call setresuid(3) with same uids
+ 
+     pr_info("handle_setresuid from %d to %d\n", old_uid, new_uid);

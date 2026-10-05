@@ -1,0 +1,93 @@
+--- a/include/linux/sched/cputime.h
++++ b/include/linux/sched/cputime.h
+@@ -54,6 +54,8 @@
+ 
+ extern void task_cputime_adjusted(struct task_struct *p, u64 *ut, u64 *st);
+ extern void thread_group_cputime_adjusted(struct task_struct *p, u64 *ut, u64 *st);
++extern void cputime_adjust(struct task_cputime *curr, struct prev_cputime *prev,
++			   u64 *ut, u64 *st);
+ 
+ 
+ /*
+--- a/kernel/sched/cputime.c
++++ b/kernel/sched/cputime.c
+@@ -487,6 +487,14 @@
+ 	*ut = cputime.utime;
+ 	*st = cputime.stime;
+ }
++void cputime_adjust(struct task_cputime *curr, struct prev_cputime *prev,
++		    u64 *ut, u64 *st)
++{
++	*ut = curr->utime;
++	*st = curr->stime;
++}
++
++
+ #else /* !CONFIG_VIRT_CPU_ACCOUNTING_NATIVE */
+ /*
+  * Account a single tick of cpu time.
+@@ -609,7 +617,7 @@
+  *
+  * Assuming that rtime_i+1 >= rtime_i.
+  */
+-static void cputime_adjust(struct task_cputime *curr,
++void cputime_adjust(struct task_cputime *curr,
+ 			   struct prev_cputime *prev,
+ 			   u64 *ut, u64 *st)
+ {
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -379,6 +379,7 @@
+ 	struct cgroup_subsys_state css;
+ #ifdef CONFIG_RMX1931_DUAL_CPU
+ 	struct rmx_cpu_time __percpu *rmx_cputime;
++	struct prev_cputime rmx_prev_cputime;
+ #endif
+ 
+ #ifdef CONFIG_FAIR_GROUP_SCHED
+--- a/kernel/sched/rmx_cpu_v2.h
++++ b/kernel/sched/rmx_cpu_v2.h
+@@ -5,6 +5,11 @@
+  * Weight mapping follows Linux 0d5936344f30. Accounting remains independent
+  * of the V1 cpuacct hierarchy, which Android may mount separately.
+  */
++#include <linux/sched/cputime.h>
++
++/* Serialize read snapshots, as upstream rstat does before cputime_adjust. */
++static DEFINE_MUTEX(rmx_cpu_stat_lock);
++
+ static struct cgroup_subsys_state *
+ rmx_cpu_css_alloc(struct cgroup_subsys_state *parent_css)
+ {
+@@ -18,6 +23,7 @@
+ 		sched_free_group(tg);
+ 		return ERR_PTR(-ENOMEM);
+ 	}
++	prev_cputime_init(&tg->rmx_prev_cputime);
+ 	return &tg->css;
+ }
+ 
+@@ -59,9 +65,11 @@
+ {
+ 	struct task_group *tg = css_tg(seq_css(sf));
+ 	struct cfs_bandwidth *bandwidth = &tg->cfs_bandwidth;
++	struct task_cputime cputime;
+ 	u64 usage = 0, user = 0, system = 0;
+ 	int cpu;
+ 
++	mutex_lock(&rmx_cpu_stat_lock);
+ 	for_each_possible_cpu(cpu) {
+ 		struct rmx_cpu_time *time = per_cpu_ptr(tg->rmx_cputime, cpu);
+ 
+@@ -69,6 +77,11 @@
+ 		user += READ_ONCE(time->user);
+ 		system += READ_ONCE(time->system);
+ 	}
++	cputime.utime = user;
++	cputime.stime = system;
++	cputime.sum_exec_runtime = usage;
++	cputime_adjust(&cputime, &tg->rmx_prev_cputime, &user, &system);
++	mutex_unlock(&rmx_cpu_stat_lock);
+ 	seq_printf(sf, "usage_usec %llu\nuser_usec %llu\nsystem_usec %llu\n"
+ 		   "nr_periods %d\nnr_throttled %d\nthrottled_usec %llu\n",
+ 		   div_u64(usage, NSEC_PER_USEC), div_u64(user, NSEC_PER_USEC),

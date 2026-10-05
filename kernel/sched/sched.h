@@ -366,9 +366,21 @@ struct cfs_bandwidth {
 #endif
 };
 
+#ifdef CONFIG_RMX1931_DUAL_CPU
+struct rmx_cpu_time {
+	u64 usage, user, system;
+};
+void rmx_cpu_charge(struct task_struct *task, u64 value);
+void rmx_cpu_account_field(struct task_struct *task, int index, u64 value);
+#endif
+
 /* task group related information */
 struct task_group {
 	struct cgroup_subsys_state css;
+#ifdef CONFIG_RMX1931_DUAL_CPU
+	struct rmx_cpu_time __percpu *rmx_cputime;
+	struct prev_cputime rmx_prev_cputime;
+#endif
 
 #ifdef CONFIG_FAIR_GROUP_SCHED
 	/* schedulable entities of this group on each cpu */

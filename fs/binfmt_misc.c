@@ -25,6 +25,8 @@
 #include <linux/syscalls.h>
 #include <linux/fs.h>
 #include <linux/uaccess.h>
+#include <linux/user_namespace.h>
+#include <linux/cred.h>
 
 #include "internal.h"
 
@@ -37,9 +39,6 @@
 enum {
 	VERBOSE_STATUS = 1 /* make it zero to save 400 bytes kernel memory */
 };
-
-static LIST_HEAD(entries);
-static int enabled = 1;
 
 enum {Enabled, Magic};
 #define MISC_FMT_PRESERVE_ARGV0 (1UL << 31)
@@ -61,7 +60,6 @@ typedef struct {
 	refcount_t users;		/* sync removal with load_misc_binary() */
 } Node;
 
-static DEFINE_RWLOCK(entries_lock);
 static struct file_system_type bm_fs_type;
 
 /*
@@ -89,13 +87,14 @@ static struct file_system_type bm_fs_type;
  *
  * Return: binary type list entry on success, NULL on failure
  */
-static Node *search_binfmt_handler(struct linux_binprm *bprm)
+static Node *search_binfmt_handler(struct binfmt_misc *misc,
+				   struct linux_binprm *bprm)
 {
 	char *p = strrchr(bprm->interp, '.');
 	Node *e;
 
 	/* Walk all the registered handlers. */
-	list_for_each_entry(e, &entries, list) {
+	list_for_each_entry(e, &misc->entries, list) {
 		char *s;
 		int j;
 
@@ -138,15 +137,16 @@ static Node *search_binfmt_handler(struct linux_binprm *bprm)
  *
  * Return: binary type list entry on success, NULL on failure
  */
-static Node *get_binfmt_handler(struct linux_binprm *bprm)
+static Node *get_binfmt_handler(struct binfmt_misc *misc,
+				struct linux_binprm *bprm)
 {
 	Node *e;
 
-	read_lock(&entries_lock);
-	e = search_binfmt_handler(bprm);
+	read_lock(&misc->entries_lock);
+	e = search_binfmt_handler(misc, bprm);
 	if (e)
 		refcount_inc(&e->users);
-	read_unlock(&entries_lock);
+	read_unlock(&misc->entries_lock);
 	return e;
 }
 
@@ -168,6 +168,26 @@ static void put_binfmt_handler(Node *e)
 }
 
 /*
+ * A namespace without its own instance inherits the nearest ancestor's
+ * handlers. The caller's credentials pin its namespace and all ancestors;
+ * the instance lives until free_user_ns(), independently of a superblock.
+ */
+static struct binfmt_misc *load_binfmt_misc(void)
+{
+	const struct user_namespace *user_ns = current_user_ns();
+	struct binfmt_misc *misc;
+
+	while (user_ns) {
+		/* Pairs with the first mount's smp_store_release(). */
+		misc = smp_load_acquire(&user_ns->binfmt_misc);
+		if (misc)
+			return misc;
+		user_ns = user_ns->parent;
+	}
+	return &init_binfmt_misc;
+}
+
+/*
  * the loader itself
  */
 static int load_misc_binary(struct linux_binprm *bprm)
@@ -177,11 +197,13 @@ static int load_misc_binary(struct linux_binprm *bprm)
 	int retval;
 	int fd_binary = -1;
 
+	struct binfmt_misc *misc = load_binfmt_misc();
+
 	retval = -ENOEXEC;
-	if (!enabled)
+	if (!READ_ONCE(misc->enabled))
 		return retval;
 
-	fmt = get_binfmt_handler(bprm);
+	fmt = get_binfmt_handler(misc, bprm);
 	if (!fmt)
 		return retval;
 
@@ -379,7 +401,7 @@ static Node *create_entry(const char __user *buffer, size_t count)
 
 	err = -ENOMEM;
 	memsize = sizeof(Node) + count + 8;
-	e = kmalloc(memsize, GFP_KERNEL);
+	e = kmalloc(memsize, GFP_KERNEL_ACCOUNT);
 	if (!e)
 		goto out;
 
@@ -491,7 +513,7 @@ static Node *create_entry(const char __user *buffer, size_t count)
 
 			if (e->mask) {
 				int i;
-				char *masked = kmalloc(e->size, GFP_KERNEL);
+				char *masked = kmalloc(e->size, GFP_KERNEL_ACCOUNT);
 
 				print_hex_dump_bytes(
 					KBUILD_MODNAME ": register:  mask[decoded]: ",
@@ -645,6 +667,12 @@ static struct inode *bm_get_inode(struct super_block *sb, int mode)
 	return inode;
 }
 
+/* The superblock pins s_user_ns; publication completed before mounting. */
+static struct binfmt_misc *i_binfmt_misc(struct inode *inode)
+{
+	return inode->i_sb->s_user_ns->binfmt_misc;
+}
+
 /**
  * bm_evict_inode - cleanup data associated with @inode
  * @inode: inode to which the data is attached
@@ -665,10 +693,12 @@ static void bm_evict_inode(struct inode *inode)
 	clear_inode(inode);
 
 	if (e) {
-		write_lock(&entries_lock);
+		struct binfmt_misc *misc = i_binfmt_misc(inode);
+
+		write_lock(&misc->entries_lock);
 		if (!list_empty(&e->list))
 			list_del_init(&e->list);
-		write_unlock(&entries_lock);
+		write_unlock(&misc->entries_lock);
 		put_binfmt_handler(e);
 	}
 }
@@ -723,11 +753,11 @@ static void unlink_binfmt_dentry(struct dentry *dentry)
  * to use writes to files in order to delete binary type handlers. But it has
  * worked for so long that it's not a pressing issue.
  */
-static void remove_binfmt_handler(Node *e)
+static void remove_binfmt_handler(struct binfmt_misc *misc, Node *e)
 {
-	write_lock(&entries_lock);
+	write_lock(&misc->entries_lock);
 	list_del_init(&e->list);
-	write_unlock(&entries_lock);
+	write_unlock(&misc->entries_lock);
 	unlink_binfmt_dentry(e->dentry);
 }
 
@@ -783,7 +813,7 @@ static ssize_t bm_entry_write(struct file *file, const char __user *buffer,
 		 * actually remove the entry from the list.
 		 */
 		if (!list_empty(&e->list))
-			remove_binfmt_handler(e);
+			remove_binfmt_handler(i_binfmt_misc(inode), e);
 
 		inode_unlock(inode);
 		break;
@@ -809,6 +839,7 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
 	struct inode *inode;
 	struct super_block *sb = file_inode(file)->i_sb;
 	struct dentry *root = sb->s_root, *dentry;
+	struct binfmt_misc *misc = sb->s_user_ns->binfmt_misc;
 	int err = 0;
 	struct file *f = NULL;
 
@@ -818,7 +849,12 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
 		return PTR_ERR(e);
 
 	if (e->flags & MISC_FMT_OPEN_FILE) {
+		const struct cred *old_cred;
+
+		/* Use the credentials that opened register, including delegated FDs. */
+		old_cred = override_creds(file->f_cred);
 		f = open_exec(e->interpreter);
+		revert_creds(old_cred);
 		if (IS_ERR(f)) {
 			pr_notice("register: failed to install interpreter file %s\n",
 				 e->interpreter);
@@ -850,9 +886,9 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
 	inode->i_fop = &bm_entry_operations;
 
 	d_instantiate(dentry, inode);
-	write_lock(&entries_lock);
-	list_add(&e->list, &entries);
-	write_unlock(&entries_lock);
+	write_lock(&misc->entries_lock);
+	list_add(&e->list, &misc->entries);
+	write_unlock(&misc->entries_lock);
 
 	err = 0;
 out2:
@@ -879,7 +915,8 @@ static const struct file_operations bm_register_operations = {
 static ssize_t
 bm_status_read(struct file *file, char __user *buf, size_t nbytes, loff_t *ppos)
 {
-	char *s = enabled ? "enabled\n" : "disabled\n";
+	struct binfmt_misc *misc = i_binfmt_misc(file_inode(file));
+	char *s = READ_ONCE(misc->enabled) ? "enabled\n" : "disabled\n";
 
 	return simple_read_from_buffer(buf, nbytes, ppos, s, strlen(s));
 }
@@ -887,6 +924,7 @@ bm_status_read(struct file *file, char __user *buf, size_t nbytes, loff_t *ppos)
 static ssize_t bm_status_write(struct file *file, const char __user *buffer,
 		size_t count, loff_t *ppos)
 {
+	struct binfmt_misc *misc = i_binfmt_misc(file_inode(file));
 	int res = parse_command(buffer, count);
 	Node *e, *next;
 	struct inode *inode;
@@ -894,11 +932,11 @@ static ssize_t bm_status_write(struct file *file, const char __user *buffer,
 	switch (res) {
 	case 1:
 		/* Disable all handlers. */
-		enabled = 0;
+		WRITE_ONCE(misc->enabled, false);
 		break;
 	case 2:
 		/* Enable all handlers. */
-		enabled = 1;
+		WRITE_ONCE(misc->enabled, true);
 		break;
 	case 3:
 		/* Delete all handlers. */
@@ -914,8 +952,8 @@ static ssize_t bm_status_write(struct file *file, const char __user *buffer,
 		 * read-only. So we only need to take the write lock when we
 		 * actually remove the entry from the list.
 		 */
-		list_for_each_entry_safe(e, next, &entries, list)
-			remove_binfmt_handler(e);
+		list_for_each_entry_safe(e, next, &misc->entries, list)
+			remove_binfmt_handler(misc, e);
 
 		inode_unlock(inode);
 		break;
@@ -942,11 +980,33 @@ static const struct super_operations s_ops = {
 static int bm_fill_super(struct super_block *sb, void *data, int silent)
 {
 	int err;
+	struct user_namespace *user_ns = sb->s_user_ns;
+	struct binfmt_misc *misc;
 	static const struct tree_descr bm_files[] = {
 		[2] = {"status", &bm_status_operations, S_IWUSR|S_IRUGO},
 		[3] = {"register", &bm_register_operations, S_IWUSR},
 		/* last one */ {""}
 	};
+
+	if (WARN_ON(user_ns != current_user_ns()))
+		return -EINVAL;
+
+	/* Prevent F handlers and stacked filesystems from pinning this instance. */
+	sb->s_iflags |= SB_I_NOEXEC | SB_I_NODEV;
+	sb->s_stack_depth = FILESYSTEM_MAX_STACK_DEPTH;
+
+	/* mount_ns() serializes first/remount initialization using s_umount. */
+	misc = user_ns->binfmt_misc;
+	if (!misc) {
+		misc = kzalloc(sizeof(*misc), GFP_KERNEL_ACCOUNT);
+		if (!misc)
+			return -ENOMEM;
+		INIT_LIST_HEAD(&misc->entries);
+		rwlock_init(&misc->entries_lock);
+		smp_store_release(&user_ns->binfmt_misc, misc);
+	}
+	/* Inode eviction empties handlers on last unmount; remount re-enables. */
+	WRITE_ONCE(misc->enabled, true);
 
 	err = simple_fill_super(sb, BINFMTFS_MAGIC, bm_files);
 	if (!err)
@@ -957,7 +1017,10 @@ static int bm_fill_super(struct super_block *sb, void *data, int silent)
 static struct dentry *bm_mount(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
 {
-	return mount_single(fs_type, flags, data, bm_fill_super);
+	struct user_namespace *user_ns = current_user_ns();
+
+	/* Keyed by userns; alloc_super() owns the namespace reference in 4.14. */
+	return mount_ns(fs_type, flags, data, user_ns, user_ns, bm_fill_super);
 }
 
 static struct linux_binfmt misc_format = {
@@ -969,6 +1032,7 @@ static struct file_system_type bm_fs_type = {
 	.owner		= THIS_MODULE,
 	.name		= "binfmt_misc",
 	.mount		= bm_mount,
+	.fs_flags	= FS_USERNS_MOUNT,
 	.kill_sb	= kill_litter_super,
 };
 MODULE_ALIAS_FS("binfmt_misc");

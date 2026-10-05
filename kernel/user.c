@@ -19,6 +19,16 @@
 #include <linux/user_namespace.h>
 #include <linux/proc_fs.h>
 #include <linux/proc_ns.h>
+#include <linux/binfmts.h>
+
+#if IS_ENABLED(CONFIG_BINFMT_MISC)
+struct binfmt_misc init_binfmt_misc = {
+	.entries = LIST_HEAD_INIT(init_binfmt_misc.entries),
+	.enabled = true,
+	.entries_lock = __RW_LOCK_UNLOCKED(init_binfmt_misc.entries_lock),
+};
+EXPORT_SYMBOL_GPL(init_binfmt_misc);
+#endif
 
 /*
  * userns count is 1 for root user, 1 for init_uts_ns,
@@ -57,6 +67,9 @@ struct user_namespace init_user_ns = {
 	.ns.ops = &userns_operations,
 #endif
 	.flags = USERNS_INIT_FLAGS,
+#if IS_ENABLED(CONFIG_BINFMT_MISC)
+	.binfmt_misc = &init_binfmt_misc,
+#endif
 #ifdef CONFIG_PERSISTENT_KEYRINGS
 	.persistent_keyring_register_sem =
 	__RWSEM_INITIALIZER(init_user_ns.persistent_keyring_register_sem),

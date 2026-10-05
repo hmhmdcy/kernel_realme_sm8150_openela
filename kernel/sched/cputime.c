@@ -487,6 +487,14 @@ void thread_group_cputime_adjusted(struct task_struct *p, u64 *ut, u64 *st)
 	*ut = cputime.utime;
 	*st = cputime.stime;
 }
+void cputime_adjust(struct task_cputime *curr, struct prev_cputime *prev,
+		    u64 *ut, u64 *st)
+{
+	*ut = curr->utime;
+	*st = curr->stime;
+}
+
+
 #else /* !CONFIG_VIRT_CPU_ACCOUNTING_NATIVE */
 /*
  * Account a single tick of cpu time.
@@ -609,7 +617,7 @@ drop_precision:
  *
  * Assuming that rtime_i+1 >= rtime_i.
  */
-static void cputime_adjust(struct task_cputime *curr,
+void cputime_adjust(struct task_cputime *curr,
 			   struct prev_cputime *prev,
 			   u64 *ut, u64 *st)
 {

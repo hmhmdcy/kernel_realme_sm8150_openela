@@ -1,0 +1,39 @@
+{
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h2cp4",
+  "boot_id": "33e13536-7ccc-4e64-a66e-0b4413a56b60",
+  "passed": true,
+  "complete_stage_3_accepted": false,
+  "scope": "Real Settings foreground/background/relaunch profiles and Power HAL boost; no performance gain claim",
+  "result_path": "runtime/native-android-scheduler-display-h2cp4-20261004.json",
+  "result_sha256": "6a498c4ab9a16a0def5805043449baf9598a0d73e1b47d9ed8903acdf201b5f8",
+  "probe_sha256": "17ccc6f2c6a1c471e93199dbd547f942614eff5a4ca8a968efe4540eaa155d7c",
+  "boot_sha256": "32db3ca25d5d927f3eb95826683bfccced7a489fe0ef5fc56447b36e4a8dd939",
+  "checks": {
+    "script_completed": true,
+    "same_boot": true,
+    "all_transitions_observed": true,
+    "power_hal_boost_observed": true,
+    "settings_pid_preserved": true,
+    "foreground_top_resumed": true,
+    "foreground_legacy_profiles": true,
+    "foreground_legacy_cpu_root": true,
+    "foreground_affinity": true,
+    "relaunch_top_resumed": true,
+    "relaunch_legacy_profiles": true,
+    "relaunch_legacy_cpu_root": true,
+    "relaunch_affinity": true,
+    "background_no_longer_top_resumed": true,
+    "background_cpuset_moved": true
+  },
+  "boost_histogram": {
+    "0": 246,
+    "30": 54
+  },
+  "expected_vendor_policy_evidence": {
+    "path": "runtime/android16-cgroup-migration-readonly-20261004.json",
+    "sha256": "4851643055bcca5720f44e6ae43198c3ffadf867b9392061fddfaf97ab70fe2f",
+    "MaxPerformance": "vendor override joins schedtune/top-app; legacy CPU root retained"
+  },
+  "walt_source_sha256": "3daae4d520efe823ae9ae348b162f48273ff1be0928478b1a9926590a2a275e5",
+  "limitation": "Settings lifecycle and observable Power HAL boost only; no quantified performance gain"
+}

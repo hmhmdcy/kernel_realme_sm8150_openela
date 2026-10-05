@@ -8,9 +8,17 @@ import re
 import shlex
 import subprocess
 import time
-from device_runtime import device, read_root
+from device_runtime import device, read_identity, read_root
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def packet_loss(output):
+    counts = re.search(r'(\d+) packets transmitted,\s*(\d+) (?:packets )?received', output)
+    loss = re.search(r'([0-9.]+)% packet loss', output)
+    if not counts or not loss or tuple(map(int, counts.groups())) != (3, 3) or float(loss[1]) != 0:
+        raise RuntimeError('Gateway must receive all three probes with zero packet loss')
+    return 0
 
 
 def main():
@@ -19,6 +27,9 @@ def main():
     args = parser.parse_args()
     if not re.fullmatch(r'[a-zA-Z0-9_-]+', args.label):
         raise RuntimeError('Invalid evidence label')
+    destination = ROOT / ('artifacts/droidspaces/' + args.label + '.json')
+    if destination.exists():
+        raise RuntimeError('Do not overwrite Wi-Fi evidence; use a fresh label')
     adb = device()
     def shell(text):
         if not text.startswith('svc wifi '):
@@ -33,37 +44,47 @@ def main():
         return {'enabled': status.startswith('Wifi is enabled'),
                 'associated': 'Supplicant state: COMPLETED' in status,
                 'validated': 'VALIDATED' in status}
+    identity = read_identity(adb)
     report = {'observed_at': dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).isoformat(),
-              'kernel': shell('uname -r'), 'before': state()}
-    if not report['before']['enabled'] or not report['before']['associated']:
-        raise RuntimeError('A connected Wi-Fi baseline is required')
+              **identity, 'passed': False}
     try:
-        shell('svc wifi disable')
-        for _ in range(8):
-            report['disabled'] = state()
-            if not report['disabled']['enabled']:
+        report['before'] = state()
+        if not report['before']['enabled'] or not report['before']['associated']:
+            raise RuntimeError('A connected Wi-Fi baseline is required')
+        try:
+            shell('svc wifi disable')
+            for _ in range(8):
+                report['disabled'] = state()
+                if not report['disabled']['enabled']:
+                    break
+                time.sleep(1)
+            if report['disabled']['enabled']:
+                raise RuntimeError('Wi-Fi did not disable')
+        finally:
+            shell('svc wifi enable')
+        for _ in range(20):
+            report['after'] = state()
+            if report['after']['associated'] and report['after']['validated']:
                 break
             time.sleep(1)
-        if report['disabled']['enabled']:
-            raise RuntimeError('Wi-Fi did not disable')
+        if not report['after']['associated'] or not report['after']['validated']:
+            raise RuntimeError('Wi-Fi did not reconnect/validate')
+        route = shell('ip -4 route show table all dev wlan0')
+        gateway = re.search(r'default via ([0-9.]+)', route)
+        if not gateway:
+            raise RuntimeError('wlan0 gateway is unavailable')
+        report['gateway_probe'] = shell('ping -I wlan0 -c 3 -W 2 ' + gateway[1])
+        report['packet_loss_percent'] = packet_loss(report['gateway_probe'])
+        report['end_identity'] = read_identity(adb)
+        if report['end_identity'] != identity:
+            raise RuntimeError('Phone rebooted during Wi-Fi validation')
+        report['passed'] = True
+    except Exception as error:
+        report['error'] = str(error)
+        raise
     finally:
-        shell('svc wifi enable')
-    for _ in range(20):
-        report['after'] = state()
-        if report['after']['associated'] and report['after']['validated']:
-            break
-        time.sleep(1)
-    if not report['after']['associated'] or not report['after']['validated']:
-        raise RuntimeError('Wi-Fi did not reconnect/validate')
-    route = shell('ip -4 route show table all dev wlan0')
-    gateway = re.search(r'default via ([0-9.]+)', route)
-    if not gateway:
-        raise RuntimeError('wlan0 gateway is unavailable')
-    report['gateway_probe'] = shell('ping -I wlan0 -c 3 -W 2 ' + gateway[1])
-    report['passed'] = True
-    destination = ROOT / ('artifacts/droidspaces/' + args.label + '.json')
-    destination.write_text(json.dumps(report, indent=2) + '\n')
-    print(json.dumps(report, indent=2))
+        destination.write_text(json.dumps(report, indent=2) + '\n')
+        print(json.dumps(report, indent=2))
 
 
 if __name__ == '__main__':

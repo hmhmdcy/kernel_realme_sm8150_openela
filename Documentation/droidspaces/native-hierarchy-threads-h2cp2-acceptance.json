@@ -1,0 +1,145 @@
+{
+  "scope": "Real native V2 parent quota composition, pthread CPU/cpuset quotas and resource-domain boundary only",
+  "passed": true,
+  "complete_stage_3_accepted": false,
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h2cp2",
+  "boot_id": "5a19baf4-ecaa-4fbf-95ef-bbf0d239f5f1",
+  "result_path": "runtime/native-cpu-hierarchy-threads-h2cp2-20261004.json",
+  "result_sha256": "0f7cc9ae3f0c8c15a26c82c985b2650da6ea06269904a650c02806b4f09ef972",
+  "probe_sha256": "a1bcea520992f020f94ef726b7c1a486ef8e61332502b78ebd652511391ae95a",
+  "ordinary_guest_seccomp": 2,
+  "cases": [
+    {
+      "case": "parent-quota-composes-over-higher-child-requests",
+      "requested_parent": "50000 100000",
+      "requested_children": "100000 100000",
+      "workloads": [
+        {
+          "cpu": 1.038228,
+          "wall": 4.000309617000312,
+          "affinity": [
+            6
+          ],
+          "membership": [
+            "4:schedtune:/",
+            "3:cpuset:/",
+            "2:cpu:/",
+            "1:blkio:/",
+            "0::/rmx1931-cpu-threaded-c37688e3c0/quota-parent/0"
+          ],
+          "seccomp": 2
+        },
+        {
+          "cpu": 0.9615100000000001,
+          "wall": 3.9985428989994034,
+          "affinity": [
+            7
+          ],
+          "membership": [
+            "4:schedtune:/",
+            "3:cpuset:/",
+            "2:cpu:/",
+            "1:blkio:/",
+            "0::/rmx1931-cpu-threaded-c37688e3c0/quota-parent/1"
+          ],
+          "seccomp": 2
+        }
+      ],
+      "used_cores_sum": 0.5000020062228657,
+      "parent_stat_before": {
+        "usage_usec": 184,
+        "user_usec": 0,
+        "system_usec": 0,
+        "nr_periods": 2,
+        "nr_throttled": 0,
+        "throttled_usec": 0
+      },
+      "parent_stat_after": {
+        "usage_usec": 2599217,
+        "user_usec": 2813489,
+        "system_usec": 3333,
+        "nr_periods": 55,
+        "nr_throttled": 51,
+        "throttled_usec": 7520441
+      }
+    },
+    {
+      "case": "actual-threaded-cpu-cpuset-quota",
+      "threads": [
+        {
+          "index": 0,
+          "tid": 3361,
+          "cpu": 0.999602984,
+          "wall": 4.000022065,
+          "affinity_mask": 64,
+          "seccomp": 2
+        },
+        {
+          "index": 1,
+          "tid": 3362,
+          "cpu": 0.987090057,
+          "wall": 4.000036908,
+          "affinity_mask": 128,
+          "seccomp": 2
+        }
+      ],
+      "memberships": [
+        [
+          "4:schedtune:/",
+          "3:cpuset:/",
+          "2:cpu:/",
+          "1:blkio:/",
+          "0::/rmx1931-cpu-threaded-c37688e3c0/thread-domain/0"
+        ],
+        [
+          "4:schedtune:/",
+          "3:cpuset:/",
+          "2:cpu:/",
+          "1:blkio:/",
+          "0::/rmx1931-cpu-threaded-c37688e3c0/thread-domain/1"
+        ]
+      ],
+      "resource_domain_memory_current": 8388608,
+      "used_cores_sum": 0.49666960479363453,
+      "cross_resource_domain_thread_migration_errno": 95,
+      "leaf_stats_before": [
+        {
+          "usage_usec": 50,
+          "user_usec": 0,
+          "system_usec": 0,
+          "nr_periods": 2,
+          "nr_throttled": 0,
+          "throttled_usec": 0
+        },
+        {
+          "usage_usec": 14,
+          "user_usec": 0,
+          "system_usec": 0,
+          "nr_periods": 2,
+          "nr_throttled": 0,
+          "throttled_usec": 0
+        }
+      ],
+      "leaf_stats_after": [
+        {
+          "usage_usec": 1278809,
+          "user_usec": 1336561,
+          "system_usec": 29691,
+          "nr_periods": 55,
+          "nr_throttled": 50,
+          "throttled_usec": 3661615
+        },
+        {
+          "usage_usec": 1259899,
+          "user_usec": 1315973,
+          "system_usec": 29550,
+          "nr_periods": 55,
+          "nr_throttled": 9,
+          "throttled_usec": 627667
+        }
+      ]
+    }
+  ],
+  "cleanup_errors": [],
+  "cpu_stat_accounting_accuracy": "Raw user/system and runtime clocks differ in captured output; this test accepts scheduling limits, not exact accounting consistency"
+}

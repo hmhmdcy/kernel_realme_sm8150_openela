@@ -357,6 +357,9 @@ void cpuacct_charge(struct task_struct *tsk, u64 cputime)
 
 	rcu_read_lock();
 
+#ifdef CONFIG_RMX1931_DUAL_CPU
+	rmx_cpu_charge(tsk, cputime);
+#endif
 	for (ca = task_ca(tsk); ca; ca = parent_ca(ca))
 		this_cpu_ptr(ca->cpuusage)->usages[index] += cputime;
 
@@ -373,6 +376,9 @@ void cpuacct_account_field(struct task_struct *tsk, int index, u64 val)
 	struct cpuacct *ca;
 
 	rcu_read_lock();
+#ifdef CONFIG_RMX1931_DUAL_CPU
+	rmx_cpu_account_field(tsk, index, val);
+#endif
 	for (ca = task_ca(tsk); ca != &root_cpuacct; ca = parent_ca(ca))
 		this_cpu_ptr(ca->cpustat)->cpustat[index] += val;
 	rcu_read_unlock();

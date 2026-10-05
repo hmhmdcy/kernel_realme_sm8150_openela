@@ -1,0 +1,504 @@
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -794,6 +794,18 @@
+ 	  select this option (if, for some reason, they need to disable it
+ 	  then swapaccount=0 does the trick).
+ 
++config RMX1931_DUAL_BLKIO
++	bool "RMX1931 opt-in V2 IO beside Android V1 blkio"
++	depends on BLK_CGROUP && BLK_DEV_THROTTLING
++	depends on !BLK_DEV_THROTTLING_LOW
++	default n
++	help
++	  Personal RMX1931 fork. Preserve Android legacy blkio and its queue
++	  root, while exposing an independent V2 io controller. IO remains
++	  on legacy blkio unless io.v2_delegate is explicitly set on a V2
++	  ancestor. This one-way selection lasts until that group is removed.
++	  io.low across the two controllers is unsupported.
++
+ config BLK_CGROUP
+ 	bool "IO controller"
+ 	depends on BLOCK
+--- a/include/linux/cgroup_subsys.h
++++ b/include/linux/cgroup_subsys.h
+@@ -27,6 +27,10 @@
+ 
+ #if IS_ENABLED(CONFIG_BLK_CGROUP)
+ SUBSYS(io)
++#if IS_ENABLED(CONFIG_RMX1931_DUAL_BLKIO)
++/* Device-local legacy copy; not a proposed upstream subsystem. */
++SUBSYS(blkio)
++#endif
+ #endif
+ 
+ #if IS_ENABLED(CONFIG_MEMCG)
+--- a/include/linux/blk-cgroup.h
++++ b/include/linux/blk-cgroup.h
+@@ -44,6 +44,11 @@
+ struct blkcg {
+ 	struct cgroup_subsys_state	css;
+ 	spinlock_t			lock;
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++	/* Set before policy allocation: css.cgroup is not initialized yet. */
++	bool				v2_controller;
++	bool				v2_delegate;
++#endif
+ 
+ 	struct radix_tree_root		blkg_tree;
+ 	struct blkcg_gq	__rcu		*blkg_hint;
+@@ -224,9 +229,36 @@
+ 	return css ? container_of(css, struct blkcg, css) : NULL;
+ }
+ 
++static inline bool blkcg_on_dfl(struct blkcg *blkcg)
++{
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++	return blkcg->v2_controller;
++#else
++	return cgroup_subsys_on_dfl(io_cgrp_subsys);
++#endif
++}
++
++/* The caller holds RCU or a css reference, protecting the ancestor chain. */
++static inline bool blkcg_v2_selected(struct cgroup_subsys_state *css)
++{
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++	for (; css; css = css->parent)
++		if (READ_ONCE(css_to_blkcg(css)->v2_delegate))
++			return true;
++	return false;
++#else
++	return true;
++#endif
++}
++
+ static inline struct blkcg *task_blkcg(struct task_struct *tsk)
+ {
+-	return css_to_blkcg(task_css(tsk, io_cgrp_id));
++	struct cgroup_subsys_state *css = task_css(tsk, io_cgrp_id);
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++	if (!blkcg_v2_selected(css))
++		css = task_css(tsk, blkio_cgrp_id);
++#endif
++	return css_to_blkcg(css);
+ }
+ 
+ static inline struct blkcg *bio_blkcg(struct bio *bio)
+@@ -239,7 +271,39 @@
+ static inline struct cgroup_subsys_state *
+ task_get_blkcg_css(struct task_struct *task)
+ {
+-	return task_get_css(task, io_cgrp_id);
++	struct cgroup_subsys_state *css = task_get_css(task, io_cgrp_id);
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++	if (!blkcg_v2_selected(css)) {
++		css_put(css);
++		css = task_get_css(task, blkio_cgrp_id);
++	}
++#endif
++	return css;
++}
++
++/* Keep Android buffered writeback on its original legacy root. */
++static inline struct cgroup_subsys_state *blkcg_get_writeback_css(struct cgroup *cgrp)
++{
++	struct cgroup_subsys_state *css = cgroup_get_e_css(cgrp, &io_cgrp_subsys);
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++	if (!blkcg_v2_selected(css)) {
++		css_put(css);
++		css = blkcg_root_css;
++		css_get(css);
++	}
++#endif
++	return css;
++}
++
++/* css IDs are per subsystem; partition the congestion key space. */
++static inline int blkcg_congested_id(struct blkcg *blkcg)
++{
++	unsigned int id = blkcg->css.id;
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++	if (blkcg->v2_controller)
++		id |= 1U << 31;
++#endif
++	return (int)id;
+ }
+ 
+ /**
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -186,7 +186,7 @@
+ 	}
+ 
+ 	wb_congested = wb_congested_get_create(q->backing_dev_info,
+-					       blkcg->css.id,
++					       blkcg_congested_id(blkcg),
+ 					       GFP_NOWAIT | __GFP_NOWARN);
+ 	if (!wb_congested) {
+ 		ret = -ENOMEM;
+@@ -991,7 +991,33 @@
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++static u64 blkcg_v2_delegate_read(struct cgroup_subsys_state *css,
++				struct cftype *cft)
++{
++	return READ_ONCE(css_to_blkcg(css)->v2_delegate);
++}
++
++static int blkcg_v2_delegate_write(struct cgroup_subsys_state *css,
++				 struct cftype *cft, u64 value)
++{
++	/* Never let a delegated child disable an ancestor's IO enforcement. */
++	if (value != 1)
++		return -EINVAL;
++	WRITE_ONCE(css_to_blkcg(css)->v2_delegate, true);
++	return 0;
++}
++#endif
++
+ static struct cftype blkcg_files[] = {
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++	{
++		.name = "v2_delegate",
++		.flags = CFTYPE_NOT_ON_ROOT,
++		.read_u64 = blkcg_v2_delegate_read,
++		.write_u64 = blkcg_v2_delegate_write,
++	},
++#endif
+ 	{
+ 		.name = "stat",
+ 		.flags = CFTYPE_NOT_ON_ROOT,
+@@ -1064,7 +1090,7 @@
+ }
+ 
+ static struct cgroup_subsys_state *
+-blkcg_css_alloc(struct cgroup_subsys_state *parent_css)
++blkcg_css_alloc_common(struct cgroup_subsys_state *parent_css, bool legacy)
+ {
+ 	struct blkcg *blkcg;
+ 	struct cgroup_subsys_state *ret;
+@@ -1072,7 +1098,7 @@
+ 
+ 	mutex_lock(&blkcg_pol_mutex);
+ 
+-	if (!parent_css) {
++	if (!parent_css && legacy) {
+ 		blkcg = &blkcg_root;
+ 	} else {
+ 		blkcg = kzalloc(sizeof(*blkcg), GFP_KERNEL);
+@@ -1082,6 +1108,9 @@
+ 		}
+ 	}
+ 
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++	blkcg->v2_controller = !legacy;
++#endif
+ 	for (i = 0; i < BLKCG_MAX_POLS ; i++) {
+ 		struct blkcg_policy *pol = blkcg_policy[i];
+ 		struct blkcg_policy_data *cpd;
+@@ -1129,6 +1158,24 @@
+ 	mutex_unlock(&blkcg_pol_mutex);
+ 	return ret;
+ }
++
++static struct cgroup_subsys_state *blkcg_css_alloc(struct cgroup_subsys_state *parent_css)
++{
++	return blkcg_css_alloc_common(parent_css, true);
++}
++
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++struct blkcg *blkcg_v2_root;
++EXPORT_SYMBOL_GPL(blkcg_v2_root);
++
++static struct cgroup_subsys_state *blkcg_v2_css_alloc(struct cgroup_subsys_state *parent_css)
++{
++	struct cgroup_subsys_state *css = blkcg_css_alloc_common(parent_css, false);
++	if (!parent_css && !IS_ERR(css))
++		blkcg_v2_root = css_to_blkcg(css);
++	return css;
++}
++#endif
+ 
+ /**
+  * blkcg_init_queue - initialize blkcg part of request queue
+@@ -1261,21 +1308,46 @@
+ 			continue;
+ 
+ 		list_for_each_entry(blkcg, &all_blkcgs, all_blkcgs_node)
+-			if (blkcg->cpd[pol->plid])
++			if (blkcg->cpd[pol->plid]
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++			    && blkcg->css.ss == root_css->ss
++#endif
++			   )
+ 				pol->cpd_bind_fn(blkcg->cpd[pol->plid]);
+ 	}
+ 	mutex_unlock(&blkcg_pol_mutex);
+ }
+ 
+-struct cgroup_subsys io_cgrp_subsys = {
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++struct cgroup_subsys blkio_cgrp_subsys = {
+ 	.css_alloc = blkcg_css_alloc,
+ 	.css_offline = blkcg_css_offline,
+ 	.css_free = blkcg_css_free,
+ 	.can_attach = blkcg_can_attach,
+ 	.bind = blkcg_bind,
+-	.dfl_cftypes = blkcg_files,
+ 	.legacy_cftypes = blkcg_legacy_files,
+ 	.legacy_name = "blkio",
++};
++EXPORT_SYMBOL_GPL(blkio_cgrp_subsys);
++#endif
++
++struct cgroup_subsys io_cgrp_subsys = {
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++	.css_alloc = blkcg_v2_css_alloc,
++#else
++	.css_alloc = blkcg_css_alloc,
++#endif
++	.css_offline = blkcg_css_offline,
++	.css_free = blkcg_css_free,
++	.can_attach = blkcg_can_attach,
++	.bind = blkcg_bind,
++	.dfl_cftypes = blkcg_files,
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++	.legacy_name = "rmx_io",
++#else
++	.legacy_cftypes = blkcg_legacy_files,
++	.legacy_name = "blkio",
++#endif
+ #ifdef CONFIG_MEMCG
+ 	/*
+ 	 * This ensures that, if available, memcg is automatically enabled
+@@ -1457,7 +1529,12 @@
+ 		WARN_ON(cgroup_add_dfl_cftypes(&io_cgrp_subsys,
+ 					       pol->dfl_cftypes));
+ 	if (pol->legacy_cftypes)
+-		WARN_ON(cgroup_add_legacy_cftypes(&io_cgrp_subsys,
++		WARN_ON(cgroup_add_legacy_cftypes(
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++						  &blkio_cgrp_subsys,
++#else
++						  &io_cgrp_subsys,
++#endif
+ 						  pol->legacy_cftypes));
+ 	mutex_unlock(&blkcg_pol_register_mutex);
+ 	return 0;
+--- a/block/blk-throttle.c
++++ b/block/blk-throttle.c
+@@ -298,7 +298,7 @@
+ 	struct throtl_data *td;
+ 	uint64_t ret;
+ 
+-	if (cgroup_subsys_on_dfl(io_cgrp_subsys) && !blkg->parent)
++	if (blkcg_on_dfl(blkg->blkcg) && !blkg->parent)
+ 		return U64_MAX;
+ 
+ 	td = tg->td;
+@@ -328,7 +328,7 @@
+ 	struct throtl_data *td;
+ 	unsigned int ret;
+ 
+-	if (cgroup_subsys_on_dfl(io_cgrp_subsys) && !blkg->parent)
++	if (blkcg_on_dfl(blkg->blkcg) && !blkg->parent)
+ 		return UINT_MAX;
+ 
+ 	td = tg->td;
+@@ -538,7 +538,7 @@
+ 	 * regardless of the position of the group in the hierarchy.
+ 	 */
+ 	sq->parent_sq = &td->service_queue;
+-	if (cgroup_subsys_on_dfl(io_cgrp_subsys) && blkg->parent)
++	if (blkcg_on_dfl(blkg->blkcg) && blkg->parent)
+ 		sq->parent_sq = &blkg_to_tg(blkg->parent)->service_queue;
+ 	tg->td = td;
+ }
+@@ -571,6 +571,30 @@
+ 	tg_update_has_rules(tg);
+ }
+ 
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++extern struct blkcg *blkcg_v2_root;
++
++static struct cgroup_subsys_state *throtl_next_queue_css(struct cgroup_subsys_state *pos)
++{
++	struct cgroup_subsys_state *root = &blkcg_root.css;
++	struct cgroup_subsys_state *next;
++	if (pos && css_to_blkcg(pos)->v2_controller)
++		root = &blkcg_v2_root->css;
++	next = css_next_descendant_post(pos, root);
++	if (!next && root == &blkcg_root.css && blkcg_v2_root)
++		next = css_next_descendant_post(NULL, &blkcg_v2_root->css);
++	return next;
++}
++
++#define throtl_for_each_queue_post(blkg, pos_css, q) \
++	for ((pos_css) = throtl_next_queue_css(NULL); (pos_css); \
++	     (pos_css) = throtl_next_queue_css(pos_css)) \
++		if (((blkg) = __blkg_lookup(css_to_blkcg(pos_css), (q), false)))
++#else
++#define throtl_for_each_queue_post(blkg, pos_css, q) \
++	blkg_for_each_descendant_post(blkg, pos_css, (q)->root_blkg)
++#endif
++
+ static void blk_throtl_update_limit_valid(struct throtl_data *td)
+ {
+ 	struct cgroup_subsys_state *pos_css;
+@@ -578,7 +602,7 @@
+ 	bool low_valid = false;
+ 
+ 	rcu_read_lock();
+-	blkg_for_each_descendant_post(blkg, pos_css, td->queue->root_blkg) {
++	throtl_for_each_queue_post(blkg, pos_css, td->queue) {
+ 		struct throtl_grp *tg = blkg_to_tg(blkg);
+ 
+ 		if (tg->bps[READ][LIMIT_LOW] || tg->bps[WRITE][LIMIT_LOW] ||
+@@ -1406,7 +1430,7 @@
+ 
+ 		tg_update_has_rules(this_tg);
+ 		/* ignore root/second level */
+-		if (!cgroup_subsys_on_dfl(io_cgrp_subsys) || !blkg->parent ||
++		if (!blkcg_on_dfl(blkg->blkcg) || !blkg->parent ||
+ 		    !blkg->parent->parent)
+ 			continue;
+ 		parent_tg = blkg_to_tg(blkg->parent);
+@@ -1862,7 +1886,7 @@
+ 		return false;
+ 
+ 	rcu_read_lock();
+-	blkg_for_each_descendant_post(blkg, pos_css, td->queue->root_blkg) {
++	throtl_for_each_queue_post(blkg, pos_css, td->queue) {
+ 		struct throtl_grp *tg = blkg_to_tg(blkg);
+ 
+ 		if (tg == this_tg)
+@@ -1908,7 +1932,7 @@
+ 	td->low_upgrade_time = jiffies;
+ 	td->scale = 0;
+ 	rcu_read_lock();
+-	blkg_for_each_descendant_post(blkg, pos_css, td->queue->root_blkg) {
++	throtl_for_each_queue_post(blkg, pos_css, td->queue) {
+ 		struct throtl_grp *tg = blkg_to_tg(blkg);
+ 		struct throtl_service_queue *sq = &tg->service_queue;
+ 
+@@ -2360,7 +2384,7 @@
+ 	 * better to walk service_queue tree directly but blkg walk is
+ 	 * easier.
+ 	 */
+-	blkg_for_each_descendant_post(blkg, pos_css, td->queue->root_blkg)
++	throtl_for_each_queue_post(blkg, pos_css, td->queue)
+ 		tg_drain_bios(&blkg_to_tg(blkg)->service_queue);
+ 
+ 	/* finally, transfer bios from top-level tg's into the td */
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -1594,7 +1594,7 @@
+ static void cfq_cpd_init(struct blkcg_policy_data *cpd)
+ {
+ 	struct cfq_group_data *cgd = cpd_to_cfqgd(cpd);
+-	unsigned int weight = cgroup_subsys_on_dfl(io_cgrp_subsys) ?
++	unsigned int weight = blkcg_on_dfl(cpd_to_blkcg(cpd)) ?
+ 			      CGROUP_WEIGHT_DFL : CFQ_WEIGHT_LEGACY_DFL;
+ 
+ 	if (cpd_to_blkcg(cpd) == &blkcg_root)
+@@ -1613,7 +1613,7 @@
+ static void cfq_cpd_bind(struct blkcg_policy_data *cpd)
+ {
+ 	struct blkcg *blkcg = cpd_to_blkcg(cpd);
+-	bool on_dfl = cgroup_subsys_on_dfl(io_cgrp_subsys);
++	bool on_dfl = blkcg_on_dfl(blkcg);
+ 	unsigned int weight = on_dfl ? CGROUP_WEIGHT_DFL : CFQ_WEIGHT_LEGACY_DFL;
+ 
+ 	if (blkcg == &blkcg_root)
+--- a/block/bfq-cgroup.c
++++ b/block/bfq-cgroup.c
+@@ -399,7 +399,7 @@
+ {
+ 	struct bfq_group_data *d = cpd_to_bfqgd(cpd);
+ 
+-	d->weight = cgroup_subsys_on_dfl(io_cgrp_subsys) ?
++	d->weight = blkcg_on_dfl(cpd_to_blkcg(cpd)) ?
+ 		CGROUP_WEIGHT_DFL : BFQ_WEIGHT_LEGACY_DFL;
+ }
+ 
+--- a/block/bio.c
++++ b/block/bio.c
+@@ -28,6 +28,7 @@
+ #include <linux/mempool.h>
+ #include <linux/workqueue.h>
+ #include <linux/cgroup.h>
++#include <linux/blk-cgroup.h>
+ #include <linux/blk-crypto.h>
+ 
+ #include <trace/events/block.h>
+@@ -2144,7 +2145,7 @@
+ 
+ 	get_io_context_active(ioc);
+ 	bio->bi_ioc = ioc;
+-	bio->bi_css = task_get_css(current, io_cgrp_id);
++	bio->bi_css = task_get_blkcg_css(current);
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(bio_associate_current);
+--- a/mm/backing-dev.c
++++ b/mm/backing-dev.c
+@@ -542,7 +542,7 @@
+ 	int ret = 0;
+ 
+ 	memcg = mem_cgroup_from_css(memcg_css);
+-	blkcg_css = cgroup_get_e_css(memcg_css->cgroup, &io_cgrp_subsys);
++	blkcg_css = blkcg_get_writeback_css(memcg_css->cgroup);
+ 	blkcg = css_to_blkcg(blkcg_css);
+ 	memcg_cgwb_list = mem_cgroup_cgwb_list(memcg);
+ 	blkcg_cgwb_list = &blkcg->cgwb_list;
+@@ -565,7 +565,7 @@
+ 		goto out_put;
+ 	}
+ 
+-	ret = wb_init(wb, bdi, blkcg_css->id, gfp);
++	ret = wb_init(wb, bdi, blkcg_congested_id(blkcg), gfp);
+ 	if (ret)
+ 		goto err_free;
+ 
+@@ -655,6 +655,16 @@
+ 
+ 	might_sleep_if(gfpflags_allow_blocking(gfp));
+ 
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++	/* Preserve Android's pre-existing single root writeback path. */
++	{
++		struct cgroup_subsys_state *css = blkcg_get_writeback_css(memcg_css->cgroup);
++		bool selected = css != blkcg_root_css;
++		css_put(css);
++		if (!selected)
++			return &bdi->wb;
++	}
++#endif
+ 	if (!memcg_css->parent)
+ 		return &bdi->wb;
+ 
+@@ -665,8 +675,7 @@
+ 			struct cgroup_subsys_state *blkcg_css;
+ 
+ 			/* see whether the blkcg association has changed */
+-			blkcg_css = cgroup_get_e_css(memcg_css->cgroup,
+-						     &io_cgrp_subsys);
++			blkcg_css = blkcg_get_writeback_css(memcg_css->cgroup);
+ 			if (unlikely(wb->blkcg_css != blkcg_css ||
+ 				     !wb_tryget(wb)))
+ 				wb = NULL;
+--- a/include/linux/backing-dev.h
++++ b/include/linux/backing-dev.h
+@@ -272,6 +272,10 @@
+ 	struct cgroup_subsys_state *memcg_css;
+ 	struct bdi_writeback *wb;
+ 
++#ifdef CONFIG_RMX1931_DUAL_BLKIO
++	if (!blkcg_v2_selected(task_css(current, io_cgrp_id)))
++		return &bdi->wb;
++#endif
+ 	memcg_css = task_css(current, memory_cgrp_id);
+ 	if (!memcg_css->parent)
+ 		return &bdi->wb;

@@ -1,0 +1,72 @@
+{
+  "observed_at": "2026-10-04T10:09:00.198640+00:00",
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h2cp4",
+  "boot_id": "33e13536-7ccc-4e64-a66e-0b4413a56b60",
+  "passed": true,
+  "complete_stage_3_accepted": true,
+  "boot_sha256": "32db3ca25d5d927f3eb95826683bfccced7a489fe0ef5fc56447b36e4a8dd939",
+  "scope": "Native V2 CPU/cpuset, accounting, Podman parameters, legacy coexistence, Android profiles and native persistent-policy regression",
+  "evidence": {
+    "podman": {
+      "path": "native-podman-h2cp4-acceptance.json",
+      "sha256": "da0d2f21c6fd49f5b88bc0edaad312cf859739eb28ce5eade3e3a88c41582316"
+    },
+    "statistics": {
+      "path": "native-statistics-h2cp4-acceptance.json",
+      "sha256": "e39e19a18af41871fa391e1db9949c6f88ace78a1fe494c6470584bcd5b00f9f"
+    },
+    "android-scheduling": {
+      "path": "native-android-scheduling-h2cp4-acceptance.json",
+      "sha256": "73ed9339c380670a9dad929aad7444cb571b70d76186f6e25a49ad202aa909b6"
+    },
+    "policy": {
+      "path": "native-policy-h2cp4-acceptance.json",
+      "sha256": "f72635a87f2c5f09b86ceed1467ac60beb796919b9142ec83d863e60916fb94e"
+    },
+    "native-cpu-hierarchy-threads": {
+      "path": "runtime/native-cpu-hierarchy-threads-h2cp4-20261004.json",
+      "sha256": "69935ffa78bc311da6c8390c79367fffa601aa3e4a276d91befa6d727eaffe8a"
+    },
+    "native-cgroup-systemd": {
+      "path": "runtime/native-cgroup-systemd-h2cp4-20261004.json",
+      "sha256": "d8018c7d825768063d621876f8858138821e46d93285deee17d17874ed758333"
+    },
+    "native-cpuset-hierarchy": {
+      "path": "runtime/native-cpuset-hierarchy-h2cp4-20261004.json",
+      "sha256": "a06c1b4238e82fd1ae235d42f6e3e6530cda5c320089d4de71797292785a6b0d"
+    },
+    "native-cpu-cpuset-coexist-fork": {
+      "path": "runtime/native-cpu-cpuset-coexist-fork-h2cp4-20261004.json",
+      "sha256": "3d6157a4f8280b3231f75174941e28a9d0251836d54006563490d64ef9dec7b0"
+    },
+    "native-legacy-cpu-weight-regression": {
+      "path": "runtime/native-legacy-cpu-weight-regression-h2cp4-20261004.json",
+      "sha256": "7b2262f2acf7c9ce135f4c58b28ac1e76d8f2ab6a228af815714f2f1487d6857"
+    },
+    "native-cpuset-hotplug-semantic": {
+      "path": "runtime/native-cpuset-hotplug-semantic-h2cp4-20261004.json",
+      "sha256": "0c17654a546d95ccaaa16dcb7a40021b695f36405e16b0f84430372f09dcaa23"
+    }
+  },
+  "build_audit_sha256": "13f3b2ecface7defae122265fda4b41e235a5b46163a291e348e16fdc28cf64c",
+  "boot_verification_sha256": "0d5eb5ea1c859d62615dde21949a0c6f233914ef373cdf8a5982f07edc0c5a93",
+  "normal_guest_seccomp": 2,
+  "selinux": "Enforcing",
+  "ksu_version": 33304,
+  "cpu_online": "0-7",
+  "guest_pid": 25176,
+  "guest_pid_namespace": "pid:[4026535358]",
+  "cleanup_passed": true,
+  "fatal_kernel_log": false,
+  "android_v1_cpu_cpuset_retained": true,
+  "full_android_v2_migration_accepted": false,
+  "limitations": [
+    "Android regression covers actual Settings lifecycle and observable Power HAL boost; no performance gain claim",
+    "Coexistence and legacy weight workers use an isolated unfiltered operator; ordinary workloads keep Seccomp=2"
+  ],
+  "remaining_functional_stages": [
+    4,
+    5,
+    6
+  ]
+}

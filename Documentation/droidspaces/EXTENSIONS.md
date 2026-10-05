@@ -1,3 +1,5 @@
+> Historical ext-io acceptance. Its unavailable/unverified boundaries describe that earlier image. Current a16pf scope is in [FINAL-DELIVERY](FINAL-DELIVERY.md); historical dualio evidence and operations are in [REMAINING-VALIDATION](REMAINING-VALIDATION.md) and [RUNTIME-RESOURCES](RUNTIME-RESOURCES.md).
+
 # 旧项目扩展：实现顺序与验收边界
 
 2026-10-03。以已验收的 `7c423d6` / KSU v3 / podman2-lowrisk2 为输入，按风险累计实现。按用户“请直接刷入，然后检验，不要分批了”的指示，已直接刷入包含全部扩展的最终 `io` 镜像。当前运行 `4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-io`；boot 回读与运行配置一致，19 项功能回归、官方 27 项能力检查及 Wi-Fi 重连通过，SELinux Enforcing，未观察到 BUG/Oops/panic。
@@ -30,7 +32,7 @@ panic/oops 仍由 ramoops 回调写保留 RAM。模块仅在正常用户空间�
 
 ## 配置与源码
 
-`configs/kernel-extensions.json` 定义顺序、允许配置变化和实际链接符号；各批配置累计叠加，输出独立的 kernel-ext-*。前四批原有 12,166 个导出符号 CRC 均无变化；I/O 批改变 1,033 个，旧外部模块必须重新构建。2026-10-03 实读 `/proc/modules` 为空，常见 vendor/odm/system/DLKM 和 KSU 模块目录未发现 `.ko`；这仅说明当前手机的外部模块状态。每批要求 MODVERSIONS、DEBUG_LIST、WALT、cubic、默认队列、pstore 和旧 Wi-Fi ABI 红线配置保持原值。CRC 一致不能代替结构布局、驱动与硬件回归，报告的 `existing_export_crc_preserved` 仅表示摘要比较结果。
+`configs/kernel-extensions.json` 定义顺序、允许配置变化和实际链接符号；各批配置累计叠加，输出独立的 kernel-ext-*。前四批原有 12,166 个导出符号 CRC 均无变化；I/O 批改变 1,033 个，旧外部模块必须重新构建。2026-10-03 实读 `/proc/modules` 为空，常见 vendor/odm/system/DLKM 和 KSU 模块目录未发现 `.ko`；这仅说明当前手机的外部模块状态。每批要求 MODVERSIONS、DEBUG_LIST、WALT、cubic、默认队列、pstore 和旧 Wi-Fi ABI 红线配置保持原值。CRC 一致不能代替结构布局与驱动兼容性检查；受影响功能按 [测试范围](TEST-POLICY.md) 复验，报告的 `existing_export_crc_preserved` 仅表示摘要比较结果。
 
 网络配置第一次编译暴露原有 nft_socket 的头文件依赖缺失和不存在的 ctx->family。源码还把无 socket 写成值 0，并缓存 lookup 引用到 skb。本次在 src-ext-network 独立副本修正包含关系、4.14 的 ctx->afi->family、无匹配的 NFT_BREAK、netns 检查和查找引用释放，保留原 transparent key 范围。补丁为 `patches/nft-socket-4.14-compat.patch`，前后摘要在 `artifacts/droidspaces/extensions-network-source.json`。当前树 xt_socket.c 同样只释放 lookup 返回的引用；[Linux v4.19](https://raw.githubusercontent.com/torvalds/linux/v4.19/net/netfilter/nft_socket.c)可核对 namespace/no-socket 行为。高风险候选需要实际规则回归。
 

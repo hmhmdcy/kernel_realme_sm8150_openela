@@ -12,11 +12,19 @@ esac
 image=localhost/rmx1931-probe:1
 name=rmx1931-acceptance-$mode
 volume=rmx1931-acceptance-$mode
+existing=$(podman ps -a --filter name="^$name$" --format '{{.Names}}')
+test -z "$existing"
+volumes=$(podman volume ls --format '{{.Name}}')
+if printf '%s\n' "$volumes" | grep -Fxq "$volume"; then
+    echo "Reserved acceptance volume already exists: $volume" >&2
+    exit 1
+fi
+volume_created=0
 cleanup() {
     podman rm -f "$name" >/dev/null 2>&1 || true
+    if [ "$volume_created" = 1 ]; then podman volume rm "$volume" >/dev/null 2>&1 || true; fi
 }
 trap cleanup EXIT HUP INT TERM
-test "$(podman ps -a --filter name="^$name$" --format '{{.Names}}')" = ''
 printf 'MODE=%s\n' "$mode"
 podman info --format=json > "/tmp/$name-info.json"
 head -n 14 "/tmp/$name-info.json"
@@ -25,6 +33,7 @@ printf 'OVERLAY_WRITE_UID_GID_PASS\n'
 timeout 15 podman run --rm "$image" nslookup quay.io
 printf 'CONTAINER_DNS_PASS\n'
 podman volume create "$volume" >/dev/null
+volume_created=1
 podman run --rm -v "$volume:/data" "$image" sh -ec 'printf PERSISTED > /data/test; chown 1234:2345 /data/test'
 podman run --rm -v "$volume:/data" "$image" sh -ec 'test "$(cat /data/test)" = PERSISTED; test "$(stat -c %u:%g /data/test)" = 1234:2345'
 printf 'NAMED_VOLUME_PERSISTENCE_UID_GID_PASS\n'
@@ -48,7 +57,9 @@ if [ "$mode" = rootless ]; then
     podman unshare sh -ec 'findmnt -t fuse.fuse-overlayfs -n | head -n 3; test "$(findmnt -t fuse.fuse-overlayfs -n | wc -l)" -gt 0'
     printf 'ROOTLESS_FUSE_MOUNT_PASS\n'
 fi
-cleanup
+podman rm -f "$name" >/dev/null
 test "$(podman ps -a --filter name="^$name$" --format '{{.Names}}')" = ''
 podman volume rm "$volume" >/dev/null
+volume_created=0
+trap - EXIT HUP INT TERM
 printf 'FUNCTIONAL_ACCEPTANCE_%s_PASS\n' "$mode"

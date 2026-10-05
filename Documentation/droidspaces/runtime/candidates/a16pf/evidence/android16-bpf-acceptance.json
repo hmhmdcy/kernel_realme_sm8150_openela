@@ -1,0 +1,57 @@
+{
+  "observed_at": "2026-10-04T22:16:43.962220+00:00",
+  "passed": true,
+  "current_rom_bpf_accepted": true,
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-a16pf",
+  "boot_id": "b5d511b9-fe8d-44d0-94a9-957babb14d53",
+  "boot_sha256": "dfe18875661164e7cb64eba7942b856e80ffe20abb537aec815da4bf43995cdd",
+  "kernel_source_lock_sha256": "3e6a7e93a24b79391dee94c3a5e36690dcf871e0baf292a551da676ce8709d72",
+  "evidence": {
+    "psi": {
+      "path": "group-psi-acceptance.json",
+      "sha256": "1a4c23394174673282b1c5212166d8f4032a3a7d974a865442689395ad8f30f7"
+    },
+    "inventory": {
+      "path": "runtime/android16-bpf-readonly-a16pf-20261005-inventory.json",
+      "sha256": "78cd85aaf1b6ea1d7cdd0ad249c5e3312865c340389c697884fe98cb54b3a1a4"
+    },
+    "workload": {
+      "path": "runtime/android16-bpf-workload-a16pf-20261005-result.json",
+      "sha256": "b96b4992458400c7c64c8b57a860cd6389801dd67a10bb1d123d2531aed2efe6"
+    },
+    "cleanup": {
+      "path": "runtime/android16-bpf-workload-a16pf-20261005-cleanup.json",
+      "sha256": "1adaf5962d7dcc996a713ad36dcce070b09a48f167b3f1396210bdd855fad3d2"
+    },
+    "health": {
+      "path": "runtime/bpf-host-final-a16pf-20261005.json",
+      "sha256": "80ca8cafde4c2e9121a7e7273d9ae3ecb586c0e95b0a986b0294b91fde7cbfd4"
+    },
+    "readonly-build": {
+      "path": "runtime/android16-bpf-readonly-a16pf-20261005-build.json",
+      "sha256": "d892225438fcb1cec0fa6cd5a224bb4ba642f322187b6bfc59c83ba17a2ae359"
+    },
+    "workload-build": {
+      "path": "runtime/android16-bpf-workload-a16pf-20261005-build.json",
+      "sha256": "f5efec7038320a3db4f3491ec51c43f4be934694695c41612e803e2666710645"
+    }
+  },
+  "loaded_programs": 34,
+  "loaded_maps": 54,
+  "actual_attached_netd_hooks": 13,
+  "uid_cpu_delta_ns": 2305329499,
+  "network_delta": {
+    "rxPackets": 256,
+    "rxBytes": 271872,
+    "txPackets": 256,
+    "txBytes": 271872
+  },
+  "new_bpf_kernel_code_required": false,
+  "scope": "Current ROM actual loaded objects/effective netd attachments; UID timeInState accounting and IPv4/IPv6 bind/connect/sendmsg/recvmsg/get/setsockopt with loopback UID packet/byte accounting.",
+  "limitations": [
+    "UID totals may include other UID 2000 activity.",
+    "Loopback accounting and syscall compatibility only; no throughput, power, GPU or tethering claim.",
+    "No claim that every netd policy/rewrite configuration was exercised."
+  ],
+  "complete_android16_desktop": "paused by user"
+}

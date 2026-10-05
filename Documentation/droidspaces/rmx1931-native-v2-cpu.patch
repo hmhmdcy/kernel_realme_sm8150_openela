@@ -1,0 +1,375 @@
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -841,7 +841,18 @@
+ 	depends on MEMCG && BLK_CGROUP
+ 	default y
+ 
+-menuconfig CGROUP_SCHED
++menuconfig RMX1931_DUAL_CPU
++	bool "RMX1931 native V2 CPU beside Android V1 CPU"
++	depends on ARM64 && CGROUP_SCHED && FAIR_GROUP_SCHED && CFS_BANDWIDTH
++	depends on CGROUP_CPUACCT && !RT_GROUP_SCHED && !SCHED_AUTOGROUP
++	default n
++	help
++	  Personal device fork. Android keeps its legacy cpu hierarchy.
++	  Enabling cpu on a non-root V2 group selects an independent CFS
++	  task group for that workload, with native max, weight and stat.
++	  Its V1 CPU limits are not combined with its selected V2 limits.
++
++config CGROUP_SCHED
+ 	bool "CPU controller"
+ 	default n
+ 	help
+--- a/include/linux/cgroup_subsys.h
++++ b/include/linux/cgroup_subsys.h
+@@ -15,6 +15,10 @@
+ 
+ #if IS_ENABLED(CONFIG_CGROUP_SCHED)
+ SUBSYS(cpu)
++#if IS_ENABLED(CONFIG_RMX1931_DUAL_CPU)
++/* Personal legacy copy, retaining the Android mount name "cpu". */
++SUBSYS(cpu_legacy)
++#endif
+ #endif
+ 
+ #if IS_ENABLED(CONFIG_CGROUP_CPUACCT)
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -366,9 +366,20 @@
+ #endif
+ };
+ 
++#ifdef CONFIG_RMX1931_DUAL_CPU
++struct rmx_cpu_time {
++	u64 usage, user, system;
++};
++void rmx_cpu_charge(struct task_struct *task, u64 value);
++void rmx_cpu_account_field(struct task_struct *task, int index, u64 value);
++#endif
++
+ /* task group related information */
+ struct task_group {
+ 	struct cgroup_subsys_state css;
++#ifdef CONFIG_RMX1931_DUAL_CPU
++	struct rmx_cpu_time __percpu *rmx_cputime;
++#endif
+ 
+ #ifdef CONFIG_FAIR_GROUP_SCHED
+ 	/* schedulable entities of this group on each cpu */
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -6880,8 +6880,19 @@
+ 	 * which is pointless here. Thus, we pass "true" to task_css_check()
+ 	 * to prevent lockdep warnings.
+ 	 */
++#ifdef CONFIG_RMX1931_DUAL_CPU
++	{
++		struct cgroup_subsys_state *css;
++
++		css = task_css_check(tsk, cpu_cgrp_id, true);
++		if (!css || !css->parent)
++			css = task_css_check(tsk, cpu_legacy_cgrp_id, true);
++		tg = container_of(css, struct task_group, css);
++	}
++#else
+ 	tg = container_of(task_css_check(tsk, cpu_cgrp_id, true),
+ 			  struct task_group, css);
++#endif
+ 	tg = autogroup_task_group(tsk, tg);
+ 	tsk->sched_task_group = tg;
+ 
+@@ -7123,6 +7134,9 @@
+ 	/*
+ 	 * Relies on the RCU grace period between css_released() and this.
+ 	 */
++#ifdef CONFIG_RMX1931_DUAL_CPU
++	free_percpu(tg->rmx_cputime);
++#endif
+ 	sched_free_group(tg);
+ }
+ 
+@@ -7408,8 +7422,15 @@
+ 		 */
+ 		if (quota == RUNTIME_INF)
+ 			quota = parent_quota;
+-		else if (parent_quota != RUNTIME_INF && quota > parent_quota)
+-			return -EINVAL;
++		else if (parent_quota != RUNTIME_INF && quota > parent_quota) {
++#ifdef CONFIG_RMX1931_DUAL_CPU
++			/* V2 limits compose; preserve V1 admission semantics. */
++			if (tg->rmx_cputime)
++				quota = parent_quota;
++			else
++#endif
++				return -EINVAL;
++		}
+ 	}
+ 	cfs_b->hierarchical_quota = quota;
+ 
+@@ -7516,7 +7537,11 @@
+ 	{ }	/* Terminate */
+ };
+ 
++#ifdef CONFIG_RMX1931_DUAL_CPU
++struct cgroup_subsys cpu_legacy_cgrp_subsys = {
++#else
+ struct cgroup_subsys cpu_cgrp_subsys = {
++#endif
+ 	.css_alloc	= cpu_cgroup_css_alloc,
+ 	.css_online	= cpu_cgroup_css_online,
+ 	.css_released	= cpu_cgroup_css_released,
+@@ -7526,7 +7551,14 @@
+ 	.attach		= cpu_cgroup_attach,
+ 	.legacy_cftypes	= cpu_files,
+ 	.early_init	= true,
++#ifdef CONFIG_RMX1931_DUAL_CPU
++	.legacy_name	= "cpu",
++#endif
+ };
++
++#ifdef CONFIG_RMX1931_DUAL_CPU
++#include "rmx_cpu_v2.h"
++#endif
+ 
+ #endif	/* CONFIG_CGROUP_SCHED */
+ 
+--- a/kernel/sched/cpuacct.c
++++ b/kernel/sched/cpuacct.c
+@@ -357,6 +357,9 @@
+ 
+ 	rcu_read_lock();
+ 
++#ifdef CONFIG_RMX1931_DUAL_CPU
++	rmx_cpu_charge(tsk, cputime);
++#endif
+ 	for (ca = task_ca(tsk); ca; ca = parent_ca(ca))
+ 		this_cpu_ptr(ca->cpuusage)->usages[index] += cputime;
+ 
+@@ -373,6 +376,9 @@
+ 	struct cpuacct *ca;
+ 
+ 	rcu_read_lock();
++#ifdef CONFIG_RMX1931_DUAL_CPU
++	rmx_cpu_account_field(tsk, index, val);
++#endif
+ 	for (ca = task_ca(tsk); ca != &root_cpuacct; ca = parent_ca(ca))
+ 		this_cpu_ptr(ca->cpustat)->cpustat[index] += val;
+ 	rcu_read_unlock();
+--- a/kernel/sched/rmx_cpu_v2.h
++++ b/kernel/sched/rmx_cpu_v2.h
+@@ -0,0 +1,215 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Device-local V2 CPU controller beside Android's legacy CPU controller.
++ * Included by core.c: use its CFS task-group allocation and constraints.
++ * Weight mapping follows Linux 0d5936344f30. Accounting remains independent
++ * of the V1 cpuacct hierarchy, which Android may mount separately.
++ */
++static struct cgroup_subsys_state *
++rmx_cpu_css_alloc(struct cgroup_subsys_state *parent_css)
++{
++	struct task_group *parent = parent_css ? css_tg(parent_css) : &root_task_group;
++	struct task_group *tg = sched_create_group(parent);
++
++	if (IS_ERR(tg))
++		return ERR_CAST(tg);
++	tg->rmx_cputime = alloc_percpu(struct rmx_cpu_time);
++	if (!tg->rmx_cputime) {
++		sched_free_group(tg);
++		return ERR_PTR(-ENOMEM);
++	}
++	return &tg->css;
++}
++
++static int rmx_cpu_css_online(struct cgroup_subsys_state *css)
++{
++	sched_online_group(css_tg(css), css->parent ? css_tg(css->parent) :
++			   &root_task_group);
++	return 0;
++}
++
++/* Called under RCU by the existing cpuacct charge sites. */
++void rmx_cpu_charge(struct task_struct *task, u64 value)
++{
++	struct cgroup_subsys_state *css = task_css(task, cpu_cgrp_id);
++
++	for (; css; css = css->parent) {
++		struct rmx_cpu_time *time = this_cpu_ptr(css_tg(css)->rmx_cputime);
++
++		time->usage += value;
++	}
++}
++
++void rmx_cpu_account_field(struct task_struct *task, int index, u64 value)
++{
++	struct cgroup_subsys_state *css = task_css(task, cpu_cgrp_id);
++
++	for (; css; css = css->parent) {
++		struct rmx_cpu_time *time = this_cpu_ptr(css_tg(css)->rmx_cputime);
++
++		if (index == CPUTIME_USER || index == CPUTIME_NICE)
++			time->user += value;
++		else if (index == CPUTIME_SYSTEM || index == CPUTIME_IRQ ||
++			 index == CPUTIME_SOFTIRQ)
++			time->system += value;
++	}
++}
++
++static int rmx_cpu_stat_show(struct seq_file *sf, void *v)
++{
++	struct task_group *tg = css_tg(seq_css(sf));
++	struct cfs_bandwidth *bandwidth = &tg->cfs_bandwidth;
++	u64 usage = 0, user = 0, system = 0;
++	int cpu;
++
++	for_each_possible_cpu(cpu) {
++		struct rmx_cpu_time *time = per_cpu_ptr(tg->rmx_cputime, cpu);
++
++		usage += READ_ONCE(time->usage);
++		user += READ_ONCE(time->user);
++		system += READ_ONCE(time->system);
++	}
++	seq_printf(sf, "usage_usec %llu\nuser_usec %llu\nsystem_usec %llu\n"
++		   "nr_periods %d\nnr_throttled %d\nthrottled_usec %llu\n",
++		   div_u64(usage, NSEC_PER_USEC), div_u64(user, NSEC_PER_USEC),
++		   div_u64(system, NSEC_PER_USEC), READ_ONCE(bandwidth->nr_periods),
++		   READ_ONCE(bandwidth->nr_throttled),
++		   div_u64(READ_ONCE(bandwidth->throttled_time), NSEC_PER_USEC));
++	return 0;
++}
++
++static u64 rmx_cpu_weight_read(struct cgroup_subsys_state *css,
++			       struct cftype *cft)
++{
++	u64 shares = scale_load_down(css_tg(css)->shares);
++
++	return DIV_ROUND_CLOSEST_ULL(shares * CGROUP_WEIGHT_DFL, 1024);
++}
++
++static int rmx_cpu_weight_write(struct cgroup_subsys_state *css,
++				struct cftype *cft, u64 weight)
++{
++	if (weight < CGROUP_WEIGHT_MIN || weight > CGROUP_WEIGHT_MAX)
++		return -ERANGE;
++	weight = DIV_ROUND_CLOSEST_ULL(weight * 1024, CGROUP_WEIGHT_DFL);
++	return sched_group_set_shares(css_tg(css), scale_load(weight));
++}
++
++static s64 rmx_cpu_nice_read(struct cgroup_subsys_state *css, struct cftype *cft)
++{
++	unsigned long weight = scale_load_down(css_tg(css)->shares);
++	int last_delta = INT_MAX;
++	int prio, delta;
++
++	for (prio = 0; prio < ARRAY_SIZE(sched_prio_to_weight); prio++) {
++		delta = abs(sched_prio_to_weight[prio] - weight);
++		if (delta >= last_delta)
++			break;
++		last_delta = delta;
++	}
++	return PRIO_TO_NICE(prio - 1 + MAX_RT_PRIO);
++}
++
++static int rmx_cpu_nice_write(struct cgroup_subsys_state *css,
++			      struct cftype *cft, s64 nice)
++{
++	unsigned long weight;
++
++	if (nice < MIN_NICE || nice > MAX_NICE)
++		return -ERANGE;
++	weight = sched_prio_to_weight[NICE_TO_PRIO(nice) - MAX_RT_PRIO];
++	return sched_group_set_shares(css_tg(css), scale_load(weight));
++}
++
++static int rmx_cpu_max_show(struct seq_file *sf, void *v)
++{
++	struct task_group *tg = css_tg(seq_css(sf));
++	long quota = tg_get_cfs_quota(tg);
++
++	if (quota < 0)
++		seq_puts(sf, "max");
++	else
++		seq_printf(sf, "%ld", quota);
++	seq_printf(sf, " %ld\n", tg_get_cfs_period(tg));
++	return 0;
++}
++
++/* Tokenize without sscanf's unbounded string or overflowing unit conversion. */
++static ssize_t rmx_cpu_max_write(struct kernfs_open_file *of, char *buf,
++				 size_t nbytes, loff_t off)
++{
++	struct task_group *tg = css_tg(of_css(of));
++	char *quota_token, *period_token = NULL, *cursor = strstrip(buf), *token;
++	u64 period = tg_get_cfs_period(tg), quota;
++	int ret;
++
++	quota_token = strsep(&cursor, " \t");
++	if (!quota_token || !*quota_token)
++		return -EINVAL;
++	while ((token = strsep(&cursor, " \t"))) {
++		if (!*token)
++			continue;
++		if (period_token)
++			return -EINVAL;
++		period_token = token;
++	}
++	if (period_token && kstrtou64(period_token, 10, &period))
++		return -EINVAL;
++	if (!strcmp(quota_token, "max"))
++		quota = RUNTIME_INF;
++	else {
++		if (kstrtou64(quota_token, 10, &quota) ||
++		    quota > U64_MAX / NSEC_PER_USEC)
++			return -EINVAL;
++		quota *= NSEC_PER_USEC;
++	}
++	if (period > U64_MAX / NSEC_PER_USEC)
++		return -EINVAL;
++	ret = tg_set_cfs_bandwidth(tg, period * NSEC_PER_USEC, quota);
++	return ret ? ret : nbytes;
++}
++
++static void rmx_cpu_css_reset(struct cgroup_subsys_state *css)
++{
++	sched_group_set_shares(css_tg(css), NICE_0_LOAD);
++	tg_set_cfs_bandwidth(css_tg(css), 100 * NSEC_PER_MSEC, RUNTIME_INF);
++}
++
++static struct cftype rmx_cpu_files[] = {
++	{
++		.name = "stat",
++		.seq_show = rmx_cpu_stat_show,
++	},
++	{
++		.name = "weight",
++		.flags = CFTYPE_NOT_ON_ROOT,
++		.read_u64 = rmx_cpu_weight_read,
++		.write_u64 = rmx_cpu_weight_write,
++	},
++	{
++		.name = "weight.nice",
++		.flags = CFTYPE_NOT_ON_ROOT,
++		.read_s64 = rmx_cpu_nice_read,
++		.write_s64 = rmx_cpu_nice_write,
++	},
++	{
++		.name = "max",
++		.flags = CFTYPE_NOT_ON_ROOT,
++		.seq_show = rmx_cpu_max_show,
++		.write = rmx_cpu_max_write,
++	},
++	{ }
++};
++
++struct cgroup_subsys cpu_cgrp_subsys = {
++	.css_alloc = rmx_cpu_css_alloc,
++	.css_online = rmx_cpu_css_online,
++	.css_released = cpu_cgroup_css_released,
++	.css_free = cpu_cgroup_css_free,
++	.css_reset = rmx_cpu_css_reset,
++	.can_attach = cpu_cgroup_can_attach,
++	.attach = cpu_cgroup_attach,
++	.dfl_cftypes = rmx_cpu_files,
++	.legacy_name = "rmx_cpu",
++	.threaded = true,
++};

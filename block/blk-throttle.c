@@ -298,7 +298,7 @@ static uint64_t tg_bps_limit(struct throtl_grp *tg, int rw)
 	struct throtl_data *td;
 	uint64_t ret;
 
-	if (cgroup_subsys_on_dfl(io_cgrp_subsys) && !blkg->parent)
+	if (blkcg_on_dfl(blkg->blkcg) && !blkg->parent)
 		return U64_MAX;
 
 	td = tg->td;
@@ -328,7 +328,7 @@ static unsigned int tg_iops_limit(struct throtl_grp *tg, int rw)
 	struct throtl_data *td;
 	unsigned int ret;
 
-	if (cgroup_subsys_on_dfl(io_cgrp_subsys) && !blkg->parent)
+	if (blkcg_on_dfl(blkg->blkcg) && !blkg->parent)
 		return UINT_MAX;
 
 	td = tg->td;
@@ -538,7 +538,7 @@ static void throtl_pd_init(struct blkg_policy_data *pd)
 	 * regardless of the position of the group in the hierarchy.
 	 */
 	sq->parent_sq = &td->service_queue;
-	if (cgroup_subsys_on_dfl(io_cgrp_subsys) && blkg->parent)
+	if (blkcg_on_dfl(blkg->blkcg) && blkg->parent)
 		sq->parent_sq = &blkg_to_tg(blkg->parent)->service_queue;
 	tg->td = td;
 }
@@ -571,6 +571,30 @@ static void throtl_pd_online(struct blkg_policy_data *pd)
 	tg_update_has_rules(tg);
 }
 
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+extern struct blkcg *blkcg_v2_root;
+
+static struct cgroup_subsys_state *throtl_next_queue_css(struct cgroup_subsys_state *pos)
+{
+	struct cgroup_subsys_state *root = &blkcg_root.css;
+	struct cgroup_subsys_state *next;
+	if (pos && css_to_blkcg(pos)->v2_controller)
+		root = &blkcg_v2_root->css;
+	next = css_next_descendant_post(pos, root);
+	if (!next && root == &blkcg_root.css && blkcg_v2_root)
+		next = css_next_descendant_post(NULL, &blkcg_v2_root->css);
+	return next;
+}
+
+#define throtl_for_each_queue_post(blkg, pos_css, q) \
+	for ((pos_css) = throtl_next_queue_css(NULL); (pos_css); \
+	     (pos_css) = throtl_next_queue_css(pos_css)) \
+		if (((blkg) = __blkg_lookup(css_to_blkcg(pos_css), (q), false)))
+#else
+#define throtl_for_each_queue_post(blkg, pos_css, q) \
+	blkg_for_each_descendant_post(blkg, pos_css, (q)->root_blkg)
+#endif
+
 static void blk_throtl_update_limit_valid(struct throtl_data *td)
 {
 	struct cgroup_subsys_state *pos_css;
@@ -578,7 +602,7 @@ static void blk_throtl_update_limit_valid(struct throtl_data *td)
 	bool low_valid = false;
 
 	rcu_read_lock();
-	blkg_for_each_descendant_post(blkg, pos_css, td->queue->root_blkg) {
+	throtl_for_each_queue_post(blkg, pos_css, td->queue) {
 		struct throtl_grp *tg = blkg_to_tg(blkg);
 
 		if (tg->bps[READ][LIMIT_LOW] || tg->bps[WRITE][LIMIT_LOW] ||
@@ -1406,7 +1430,7 @@ static void tg_conf_updated(struct throtl_grp *tg, bool global)
 
 		tg_update_has_rules(this_tg);
 		/* ignore root/second level */
-		if (!cgroup_subsys_on_dfl(io_cgrp_subsys) || !blkg->parent ||
+		if (!blkcg_on_dfl(blkg->blkcg) || !blkg->parent ||
 		    !blkg->parent->parent)
 			continue;
 		parent_tg = blkg_to_tg(blkg->parent);
@@ -1862,7 +1886,7 @@ static bool throtl_can_upgrade(struct throtl_data *td,
 		return false;
 
 	rcu_read_lock();
-	blkg_for_each_descendant_post(blkg, pos_css, td->queue->root_blkg) {
+	throtl_for_each_queue_post(blkg, pos_css, td->queue) {
 		struct throtl_grp *tg = blkg_to_tg(blkg);
 
 		if (tg == this_tg)
@@ -1908,7 +1932,7 @@ static void throtl_upgrade_state(struct throtl_data *td)
 	td->low_upgrade_time = jiffies;
 	td->scale = 0;
 	rcu_read_lock();
-	blkg_for_each_descendant_post(blkg, pos_css, td->queue->root_blkg) {
+	throtl_for_each_queue_post(blkg, pos_css, td->queue) {
 		struct throtl_grp *tg = blkg_to_tg(blkg);
 		struct throtl_service_queue *sq = &tg->service_queue;
 
@@ -2360,7 +2384,7 @@ void blk_throtl_drain(struct request_queue *q)
 	 * better to walk service_queue tree directly but blkg walk is
 	 * easier.
 	 */
-	blkg_for_each_descendant_post(blkg, pos_css, td->queue->root_blkg)
+	throtl_for_each_queue_post(blkg, pos_css, td->queue)
 		tg_drain_bios(&blkg_to_tg(blkg)->service_queue);
 
 	/* finally, transfer bios from top-level tg's into the td */

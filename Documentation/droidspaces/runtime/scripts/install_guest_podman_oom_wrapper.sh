@@ -6,6 +6,9 @@ test "$(id -u)" = 0
 case "$(uname -r)" in
     4.14.356-openela-rc1-perf-droidspaces-v6.6.0-podman2|4.14.356-openela-rc1-perf-droidspaces-v6.6.0-podman2-lowrisk2|4.14.356-openela-rc1-perf-droidspaces-v6.6.0-podman2-lr2-ksu3) ;;
     4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-utilities|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-bbr|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-checkpoint|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-network|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-io) ;;
+    4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-resources|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-dualio|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-harden1) ;;
+    4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h2cp|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h2cp2|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h2cp3|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h2cp4) ;;
+    4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h3bm|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h3bm2|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h4sn|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h5bf|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h5bf2|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-a16ps|4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-a16pf) ;;
     *) exit 1 ;;
 esac
 temporary=/tmp/rmx1931-tests/podman-oom-wrapper

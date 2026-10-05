@@ -28,6 +28,7 @@
 #include <linux/mempool.h>
 #include <linux/workqueue.h>
 #include <linux/cgroup.h>
+#include <linux/blk-cgroup.h>
 #include <linux/blk-crypto.h>
 
 #include <trace/events/block.h>
@@ -2144,7 +2145,7 @@ int bio_associate_current(struct bio *bio)
 
 	get_io_context_active(ioc);
 	bio->bi_ioc = ioc;
-	bio->bi_css = task_get_css(current, io_cgrp_id);
+	bio->bi_css = task_get_blkcg_css(current);
 	return 0;
 }
 EXPORT_SYMBOL_GPL(bio_associate_current);

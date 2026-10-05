@@ -214,13 +214,18 @@ def main():
     elif args.action == 'mark':
         marker = 'RMX1931_PSTORE_MARKER_' + uuid.uuid4().hex
         boot_id = checked(adb, 'cat /proc/sys/kernel/random/boot_id').decode().strip()
-        # Android's console_loglevel=4 drops informational <6> messages.
-        # A diagnostic <3> marker reaches pstore-console without changing levels.
-        checked(adb, "printf '%s\\n' '<3>" + marker + "' > /dev/kmsg")
+        # This OEM printk handler silently discards user writes with a level
+        # prefix. Use its default level and prove the marker reached printk.
+        checked(adb, "printf '%s\\n' '" + marker + "' > /dev/kmsg")
+        live = checked(adb, 'dmesg').decode(errors='replace')
+        if marker not in live:
+            raise RuntimeError('Marker write was discarded; do not reboot for retention verification')
+        default_level = int(checked(adb, 'cat /proc/sys/kernel/printk').split()[1])
         checked(adb, "test -c /dev/pmsg0; printf '%s\\n' '" + marker + "' > /dev/pmsg0")
         record = {'marker': marker, 'boot_id_before': boot_id,
                   'created_at': dt.datetime.now(dt.timezone.utc).isoformat(),
-                  'reset_path': args.reset_path, 'marker_log_level': 3,
+                  'reset_path': args.reset_path, 'marker_log_level': default_level,
+                  'live_kmsg_verified': True,
                   'marker_channels': ['kmsg', 'pmsg'],
                   'purpose': 'non-panic retention only; no panic is triggered'}
         marker_path.parent.mkdir(parents=True, exist_ok=True)

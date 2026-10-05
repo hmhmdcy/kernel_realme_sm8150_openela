@@ -542,7 +542,7 @@ static int cgwb_create(struct backing_dev_info *bdi,
 	int ret = 0;
 
 	memcg = mem_cgroup_from_css(memcg_css);
-	blkcg_css = cgroup_get_e_css(memcg_css->cgroup, &io_cgrp_subsys);
+	blkcg_css = blkcg_get_writeback_css(memcg_css->cgroup);
 	blkcg = css_to_blkcg(blkcg_css);
 	memcg_cgwb_list = mem_cgroup_cgwb_list(memcg);
 	blkcg_cgwb_list = &blkcg->cgwb_list;
@@ -565,7 +565,7 @@ static int cgwb_create(struct backing_dev_info *bdi,
 		goto out_put;
 	}
 
-	ret = wb_init(wb, bdi, blkcg_css->id, gfp);
+	ret = wb_init(wb, bdi, blkcg_congested_id(blkcg), gfp);
 	if (ret)
 		goto err_free;
 
@@ -655,6 +655,16 @@ struct bdi_writeback *wb_get_create(struct backing_dev_info *bdi,
 
 	might_sleep_if(gfpflags_allow_blocking(gfp));
 
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+	/* Preserve Android's pre-existing single root writeback path. */
+	{
+		struct cgroup_subsys_state *css = blkcg_get_writeback_css(memcg_css->cgroup);
+		bool selected = css != blkcg_root_css;
+		css_put(css);
+		if (!selected)
+			return &bdi->wb;
+	}
+#endif
 	if (!memcg_css->parent)
 		return &bdi->wb;
 
@@ -665,8 +675,7 @@ struct bdi_writeback *wb_get_create(struct backing_dev_info *bdi,
 			struct cgroup_subsys_state *blkcg_css;
 
 			/* see whether the blkcg association has changed */
-			blkcg_css = cgroup_get_e_css(memcg_css->cgroup,
-						     &io_cgrp_subsys);
+			blkcg_css = blkcg_get_writeback_css(memcg_css->cgroup);
 			if (unlikely(wb->blkcg_css != blkcg_css ||
 				     !wb_tryget(wb)))
 				wb = NULL;

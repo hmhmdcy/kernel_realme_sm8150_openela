@@ -1,0 +1,11 @@
+--- a/resolved.config
++++ b/resolved.config
+@@ -655,7 +655,7 @@
+ #
+ # Boot options
+ #
+-CONFIG_CMDLINE="cgroup_disable=pressure"
++CONFIG_CMDLINE="psi=1"
+ # CONFIG_CMDLINE_FROM_BOOTLOADER is not set
+ CONFIG_CMDLINE_EXTEND=y
+ # CONFIG_CMDLINE_FORCE is not set

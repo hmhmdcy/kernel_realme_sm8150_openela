@@ -8,6 +8,7 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shlex
@@ -16,6 +17,11 @@ import sys
 import time
 
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+# Platform-tools 37.0.1 introduced libadbusb on Windows. This workspace's
+# authorized phone intermittently disappeared with that backend. Use the
+# documented legacy option for child tools without changing global settings.
+if sys.platform == 'win32':
+    os.environ.setdefault('ADB_USB_LEGACY', '1')
 
 ROOT = Path(__file__).resolve().parents[1]
 NAME = 'rmx1931-podman'
@@ -25,6 +31,22 @@ DS = '/data/local/tmp/rmx1931-droidspaces-check'
 
 def device():
     adb = [str(ROOT / 'tools/platform-tools/adb.exe')]
+    pinned = os.environ.get('RMX1931_ADB_SERIAL')
+    if pinned:
+        if not re.fullmatch(r'[A-Za-z0-9._-]+', pinned):
+            raise RuntimeError('Invalid pinned ADB target')
+        digest = hashlib.sha256(pinned.encode()).hexdigest()
+        verified = False
+        for path in (ROOT / 'artifacts/droidspaces').glob('extensions-*-preflight.json'):
+            record = json.loads(path.read_text(encoding='utf-8'))
+            if record.get('preflight_passed') and record.get('transport_id_sha256') == digest:
+                verified = True
+                break
+        if not verified:
+            raise RuntimeError('Pinned ADB target has no verified preflight identity')
+        # Reuse the already verified identity. Each action still checks the
+        # required kernel/boot/guest state; avoid extra USB detection traffic.
+        return adb + ['-s', pinned]
     for attempt in range(20):
         rows = [r.split() for r in subprocess.check_output(adb + ['devices'], text=True, timeout=15).splitlines()[1:] if r.strip()]
         if len(rows) > 1 or any(len(r) != 2 or r[1] not in {'device', 'offline'} for r in rows):
@@ -67,7 +89,12 @@ def guest_info(adb):
                 raise RuntimeError('Unexpected guest identity')
             return info
         if attempt < 2:
-            time.sleep(1)
+            if attempt == 0 and any(word in result.stderr for word in (b'not found', b'closed', b'offline')):
+                # A single server-side wait for the pinned transport avoids
+                # enumerating the USB device or repeatedly probing its model.
+                subprocess.run(adb + ['wait-for-device'], capture_output=True, timeout=20, check=True)
+            else:
+                time.sleep(1)
     raise RuntimeError('Guest info is unavailable or malformed: ' + result.stderr.decode(errors='replace'))
 
 
@@ -80,10 +107,18 @@ def read_root(adb, command, timeout=30):
         if not any(word in result.stderr for word in (b'not found', b'closed', b'offline')):
             break
         if attempt < 3:
-            time.sleep(1)
-            if device()[-1] != adb[-1]:
-                raise RuntimeError('ADB target changed during read-only reconnection')
+            if attempt == 0:
+                subprocess.run(adb + ['wait-for-device'], capture_output=True, timeout=20, check=True)
+            else:
+                time.sleep(1)
     raise RuntimeError('Read-only query failed (exit ' + str(result.returncode) + '): ' + result.stderr.decode(errors='replace'))
+
+
+def read_identity(adb):
+    observed = read_root(adb, 'uname -r; cat /proc/sys/kernel/random/boot_id', timeout=15).decode().splitlines()
+    if len(observed) != 2 or not re.fullmatch(r'[a-f0-9-]{36}', observed[1]):
+        raise RuntimeError('Kernel/boot identity cannot be recorded')
+    return {'kernel': observed[0], 'boot_id': observed[1]}
 
 
 def collect_service(adb, label, timeout):
@@ -114,16 +149,22 @@ def collect_service(adb, label, timeout):
         ('Guest service is still unverified; inspect rmx1931-test-' + label + ' before retrying.').encode())
 
 
-def guest_service(adb, command, label, timeout):
+def guest_service(adb, command, label, timeout, retain_detached=False):
     """Launch once, then collect output independently of the entry stream."""
     argv = shlex.split(command)
     work = '/tmp/rmx1931-tests/service-' + label
     unit = 'rmx1931-test-' + label
     payload = (shlex.join(argv[3:]) + ' > ' + work + '/stdout 2> ' + work + '/stderr; '
                'status=$?; printf "%s\\n" "$status" > ' + work + '/status; exit "$status"')
-    launch = shlex.join(['systemd-run', '--quiet', '--no-block', '--collect',
-                         '--unit=' + unit, '--property=OOMScoreAdjust=0', '/bin/sh', '-c', payload])
-    setup = ('set -e; test -f /etc/droidspaces; test ! -e ' + work + '; '
+    service = ['systemd-run', '--quiet', '--no-block', '--collect',
+               '--unit=' + unit, '--property=OOMScoreAdjust=0']
+    if retain_detached:
+        # Explicit multi-phase lifecycle fixtures leave bounded containers for
+        # subsequent tests. Their detached conmon must outlive the probe unit.
+        service.append('--property=KillMode=process')
+    launch = shlex.join(service + ['/bin/sh', '-c', payload])
+    setup = ('set -e; test -f /etc/droidspaces; test ! -L /tmp/rmx1931-tests; '
+             'mkdir -p /tmp/rmx1931-tests; test -d /tmp/rmx1931-tests; test ! -e ' + work + '; '
              'test ! -L ' + work + '; mkdir -m 700 ' + work + '; ' + launch)
     entry = argv[:3]
     def invoke(arguments, limit=15):
@@ -142,22 +183,29 @@ def main():
     p.add_argument('--script', type=Path)
     p.add_argument('--script-arg', action='append', default=[])
     p.add_argument('--label', required=True)
+    p.add_argument('--verbose', action='store_true', help='Print the full saved report; default: compact result and report path')
     p.add_argument('--timeout', type=int, default=60)
     p.add_argument('--resume-extract', action='store_true')
     p.add_argument('--auto-cgroup', action='store_true')
     p.add_argument('--force-cgroupv1', action='store_true', help='Legacy diagnostic only; Podman profile requires v2')
     p.add_argument('--guest-service', action='store_true', help='Run a probe as a transient guest systemd service with collected exit status')
+    p.add_argument('--retain-detached-workloads', action='store_true', help='Multi-phase fixtures only: retain detached container monitors after the probe service exits')
     args = p.parse_args()
-    if not args.label.replace('-', '').replace('_', '').isalnum():
+    if not re.fullmatch(r'[a-zA-Z0-9_-]+', args.label):
         raise RuntimeError('Invalid report label')
+    directory = ROOT / 'artifacts/droidspaces/runtime'
+    report_path = directory / (args.label + '.json')
+    if args.action in {'run', 'run-file'} and report_path.exists():
+        raise RuntimeError('Do not overwrite probe evidence; use a fresh label or collect-service for a pending task')
     adb = device()
     script_digest = None
     identity = None
     if args.action in {'run', 'run-file', 'collect-service'}:
-        observed = read_root(adb, 'uname -r; cat /proc/sys/kernel/random/boot_id', timeout=15).decode().splitlines()
-        if len(observed) != 2 or not re.fullmatch(r'[a-f0-9-]{36}', observed[1]):
-            raise RuntimeError('Kernel/boot identity cannot be recorded')
-        identity = {'kernel': observed[0], 'boot_id': observed[1]}
+        identity = read_identity(adb)
+    if args.action == 'collect-service' and report_path.exists():
+        previous = json.loads(report_path.read_text(encoding='utf-8'))
+        if previous.get('returncode') != 124 or any(previous.get(key) != value for key, value in identity.items()):
+            raise RuntimeError('Only a pending service from the current boot may be collected over its existing report')
     if args.action == 'prepare':
         archive = ROOT / 'tools/downloads/droidspaces/Ubuntu-24.04-Minimal-Droidspaces-rootfs-aarch64-20260920-v20260920-040926.tar.xz'
         digest = 'aa3c7fbd7ec7a905704bb79c374d75f10af7a9a5ee2ddab5e9439fa8035b2bd3'
@@ -227,11 +275,13 @@ def main():
     if args.guest_service:
         if args.action not in {'run', 'run-file'}:
             raise RuntimeError('--guest-service requires run or run-file')
+    if args.retain_detached_workloads and not args.guest_service:
+        raise RuntimeError('--retain-detached-workloads requires --guest-service')
     try:
         if args.action == 'collect-service':
             result = collect_service(adb, args.label, args.timeout)
         elif args.guest_service:
-            result = guest_service(adb, command, args.label, args.timeout)
+            result = guest_service(adb, command, args.label, args.timeout, retain_detached=args.retain_detached_workloads)
         else:
             result = subprocess.run(adb + ['shell', 'su -c ' + shlex.quote(command)],
                                     capture_output=True, timeout=args.timeout)
@@ -240,6 +290,7 @@ def main():
             # error. Never replay timed-out or partially executed commands.
             if result.returncode == 1 and not result.stdout and re.search(
                     rb"device '[^']+' not found", result.stderr):
+                subprocess.run(adb + ['wait-for-device'], capture_output=True, timeout=20, check=True)
                 refreshed = device()
                 if refreshed[-1] != adb[-1]:
                     raise RuntimeError('ADB target changed during reconnection')
@@ -248,7 +299,6 @@ def main():
     except subprocess.TimeoutExpired as error:
         result = subprocess.CompletedProcess([], 124, error.stdout or b'',
                     (error.stderr or b'') + b'\nADB command timed out; check remote task state before retrying.\n')
-    directory = ROOT / 'artifacts/droidspaces/runtime'
     directory.mkdir(parents=True, exist_ok=True)
     output = result.stdout.decode(errors='replace')
     output = re.sub(r'androidboot\.serialno=\S+', 'androidboot.serialno=[redacted]', output)
@@ -262,13 +312,31 @@ def main():
               'stderr': errors}
     if args.guest_service or args.action == 'collect-service':
         report['execution'] = 'guest systemd service; durable log and explicit exit status'
+        if args.retain_detached_workloads:
+            report['detached_workloads_retained'] = True
     if identity:
         report.update(identity)
+        try:
+            report['end_identity'] = read_identity(adb)
+            if report['end_identity'] != identity:
+                report['returncode'] = 125
+                report['stderr'] += '\nPhone rebooted during the probe; this result is not accepted.\n'
+        except RuntimeError as error:
+            report['returncode'] = 125
+            report['stderr'] += '\nProbe end identity is unverified: ' + str(error) + '\n'
     if script_digest:
         report['script_source_sha256'] = script_digest
-    (directory / (args.label + '.json')).write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
-    print(json.dumps(report, ensure_ascii=False, indent=2), flush=True)
-    raise SystemExit(result.returncode)
+    report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+    summary = {'label': args.label, 'action': args.action, 'returncode': report['returncode'],
+               'report': str(report_path), 'report_sha256': hashlib.sha256(report_path.read_bytes()).hexdigest(),
+               'stdout_bytes': len(output.encode('utf-8')), 'stderr_bytes': len(report['stderr'].encode('utf-8'))}
+    for key in ('kernel', 'boot_id', 'end_identity', 'script_source_sha256'):
+        if key in report:
+            summary[key] = report[key]
+    if report['returncode']:
+        summary.update(stdout_tail=output[-1200:], stderr_tail=report['stderr'][-1200:])
+    print(json.dumps(report if args.verbose else summary, ensure_ascii=False), flush=True)
+    raise SystemExit(report['returncode'])
 
 
 if __name__ == '__main__':

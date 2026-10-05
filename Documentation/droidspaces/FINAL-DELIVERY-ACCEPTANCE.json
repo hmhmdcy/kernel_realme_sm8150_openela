@@ -1,0 +1,192 @@
+{
+  "observed_at": "2026-10-04T22:30:00.047270+00:00",
+  "passed": true,
+  "agreed_goal_scope_complete": true,
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-a16pf",
+  "boot_id": "b5d511b9-fe8d-44d0-94a9-957babb14d53",
+  "boot_sha256": "dfe18875661164e7cb64eba7942b856e80ffe20abb537aec815da4bf43995cdd",
+  "requirements": [
+    {
+      "requirement": "Original kernel/container acceptance: CRIU, device BPF, quota/IO, mount propagation, WireGuard and authorized panic",
+      "status": "proved",
+      "proof_kind": "historical accepted baseline; not claimed freshly repeated",
+      "receipt": "remaining-acceptance-20261004.json",
+      "bound_evidence_reports": 10
+    },
+    {
+      "requirement": "Stage 1: memory.oom.group and cgroup.kill boundaries and real containers",
+      "status": "proved",
+      "proof_kind": "inherited accepted kernel implementation",
+      "receipt": "hardening1-acceptance.json",
+      "bound_evidence_reports": 6
+    },
+    {
+      "requirement": "Stage 2: actual resource policies and guest restart persistence",
+      "status": "proved",
+      "proof_kind": "historical full lifecycle plus current legacy-policy and memory.high regression",
+      "receipt": "resource-policy-acceptance.json",
+      "bound_evidence_reports": 13
+    },
+    {
+      "requirement": "Stage 3: native V2 CPU/cpuset and Android V1 coexistence",
+      "status": "proved",
+      "proof_kind": "historical full feature acceptance plus current CPU/cpuset workload",
+      "receipt": "native-cpu-cpuset-stage3-h2cp4-acceptance.json",
+      "bound_evidence_reports": 10
+    },
+    {
+      "requirement": "Stage 4: binfmt namespace isolation and actual cross-architecture containers",
+      "status": "proved",
+      "proof_kind": "inherited accepted implementation",
+      "receipt": "binfmt-stage4-acceptance.json",
+      "bound_evidence_reports": 13
+    },
+    {
+      "requirement": "Stage 5: seccomp user notifications and real OCI broker",
+      "status": "proved",
+      "proof_kind": "inherited implementation plus current ordinary filter preservation",
+      "receipt": "seccomp-notify-stage5-acceptance.json",
+      "bound_evidence_reports": 10
+    },
+    {
+      "requirement": "Android 16 public Binder freeze callbacks and capability discovery",
+      "status": "proved",
+      "proof_kind": "historical full callbacks plus current Android 16 public API regression",
+      "receipt": "binder-freeze-acceptance.json",
+      "bound_evidence_reports": 7
+    },
+    {
+      "requirement": "Group PSI reclaim full/some, hierarchy, monitor identity and real guest restart",
+      "status": "proved",
+      "proof_kind": "current a16pf boot full feature acceptance",
+      "receipt": "group-psi-acceptance.json",
+      "bound_evidence_reports": 16
+    },
+    {
+      "requirement": "Current Android 16 ROM actual eBPF interfaces and CPU/network accounting",
+      "status": "proved",
+      "proof_kind": "current a16pf boot actual ROM workload; no new BPF code needed",
+      "receipt": "android16-bpf-acceptance.json",
+      "bound_evidence_reports": 7
+    },
+    {
+      "requirement": "Source/config/boot packaging and intentional ABI change reviewed",
+      "status": "proved",
+      "source_files": 62,
+      "changed_crcs": 3916,
+      "external_modules_absent": true
+    },
+    {
+      "requirement": "Latest verified build, original boot and verified rollback retained; storage cleanup",
+      "status": "proved",
+      "standard_vhd_compaction_limitation_reported": true
+    },
+    {
+      "requirement": "Current device healthy and all test fixtures/policies cleaned",
+      "status": "proved",
+      "current_boot_state": {
+        "path": "artifacts/droidspaces/runtime/a16pf-final-delivery-state.json",
+        "sha256": "f2197dd666f74c4bdf829b55bd6ca261db457fa0be2e791a505f3c91a935ff83"
+      }
+    },
+    {
+      "requirement": "User test-scope reductions and full Android 16 desktop pause respected",
+      "status": "proved"
+    },
+    {
+      "requirement": "Requested Snapdragon EL2/AVF and Android V1/V2 compatibility research",
+      "status": "proved",
+      "implementation_not_required_by_discussion": true
+    },
+    {
+      "requirement": "Reviewable source and evidence archive; prior snapshots preserved",
+      "status": "proved",
+      "snapshot_files": 122,
+      "prior_frozen_files": 637
+    }
+  ],
+  "evidence": {
+    "remaining-acceptance-20261004.json": {
+      "path": "artifacts/droidspaces/remaining-acceptance-20261004.json",
+      "sha256": "c0359b9e925ffe8f026ffaa42d4fe8e409b5e17c768934f564c5220c5b04a25e"
+    },
+    "hardening1-acceptance.json": {
+      "path": "artifacts/droidspaces/hardening1-acceptance.json",
+      "sha256": "8c48420a1bb9d821ad38744e3849a24a75e173b9583c3d6aa7a288da9429e862"
+    },
+    "resource-policy-acceptance.json": {
+      "path": "artifacts/droidspaces/resource-policy-acceptance.json",
+      "sha256": "6fa500d3a9ada0ff964b48e654017f6684bfa45606bded728c52f493b5897b35"
+    },
+    "native-cpu-cpuset-stage3-h2cp4-acceptance.json": {
+      "path": "artifacts/droidspaces/native-cpu-cpuset-stage3-h2cp4-acceptance.json",
+      "sha256": "d45d179169585b7079bc208d7682efaff9e7b87f54489434c40206d249d0e619"
+    },
+    "binfmt-stage4-acceptance.json": {
+      "path": "artifacts/droidspaces/binfmt-stage4-acceptance.json",
+      "sha256": "f32598934607a41a10907955a41bc9cce71fc6a71fd7f2b152e422ef2c4481fa"
+    },
+    "seccomp-notify-stage5-acceptance.json": {
+      "path": "artifacts/droidspaces/seccomp-notify-stage5-acceptance.json",
+      "sha256": "a79370bf2d8e9b50002242b0cb4051522ec0eb56b6992431390bf4739980a45f"
+    },
+    "binder-freeze-acceptance.json": {
+      "path": "artifacts/droidspaces/binder-freeze-acceptance.json",
+      "sha256": "d7942418ddcb7443552c14b417d7c9e3e0dc5342813f108cb071da7a93c79aa0"
+    },
+    "group-psi-acceptance.json": {
+      "path": "artifacts/droidspaces/group-psi-acceptance.json",
+      "sha256": "1a4c23394174673282b1c5212166d8f4032a3a7d974a865442689395ad8f30f7"
+    },
+    "android16-bpf-acceptance.json": {
+      "path": "artifacts/droidspaces/android16-bpf-acceptance.json",
+      "sha256": "36bbe48c0e7d538d644a33f0b6ebcf4caf5871efc219c2e9a134f1c712afafc7"
+    },
+    "kernel-ext-android16-group-psi-reclaim-fix/audit.json": {
+      "path": "artifacts/droidspaces/kernel-ext-android16-group-psi-reclaim-fix/audit.json",
+      "sha256": "99cb5d281e04fa3261673584088d18e2aa2256b5b94ca9b816b1fa6e35a0bde6"
+    },
+    "a16pf-final-wsl-retention.json": {
+      "path": "artifacts/droidspaces/a16pf-final-wsl-retention.json",
+      "sha256": "2bd82b864171be1b31e5a757d81827fcba2a4b0abf9692612a1732fe2134b21e"
+    },
+    "runtime/a16pf-final-delivery-state.json": {
+      "path": "artifacts/droidspaces/runtime/a16pf-final-delivery-state.json",
+      "sha256": "f2197dd666f74c4bdf829b55bd6ca261db457fa0be2e791a505f3c91a935ff83"
+    },
+    "boot-images/ext-android16-group-psi-reclaim-fix-candidate-check.json": {
+      "path": "artifacts/droidspaces/boot-images/ext-android16-group-psi-reclaim-fix-candidate-check.json",
+      "sha256": "5bfbe36bc156390b3b3037a57b145ff568a44fb88a7ff6b8588a027f6ac52442"
+    },
+    "storage-cleanup": {
+      "path": "artifacts/droidspaces/../storage-cleanup-20261005-final.json",
+      "sha256": "dc398192d0660afe890d59d61389a6451aa389dd1d1aa20b377af57b41df7416"
+    },
+    "virtualization-feasibility.md": {
+      "path": "docs/virtualization-feasibility.md",
+      "sha256": "5e200aaebe9093acde6864b080882bf804b486d42b7cb15a373cc82a24db4c44"
+    },
+    "android16-cgroup-v2-migration.md": {
+      "path": "docs/android16-cgroup-v2-migration.md",
+      "sha256": "edff66f1eccb9fc7d39fd0ae6d2d415658e36a09c626ec485c13a34959cb5f89"
+    },
+    "old-androidr-kernel-review.md": {
+      "path": "docs/old-androidr-kernel-review.md",
+      "sha256": "a5166088c4819f9d1f9e39a2e18f12f34db6abab95d8f558d5c7500298fc8996"
+    }
+  },
+  "required_work_remaining": [],
+  "paused_scope": [
+    "Complete Android 16 desktop/app container"
+  ],
+  "research_only": [
+    "MGLRU",
+    "Complete ROM V1-to-V2 migration",
+    "EL2-dependent KVM/AVF"
+  ],
+  "limitations": [
+    "Historical feature reports are inherited baseline evidence, not all repeated on the current boot.",
+    "External kernel modules are incompatible unless rebuilt/revalidated for the new ABI.",
+    "Public materials prepared locally; no commit, push or remote publication requested."
+  ]
+}

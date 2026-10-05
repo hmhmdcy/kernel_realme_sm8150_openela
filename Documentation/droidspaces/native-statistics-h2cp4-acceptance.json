@@ -1,0 +1,28 @@
+{
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h2cp4",
+  "boot_id": "33e13536-7ccc-4e64-a66e-0b4413a56b60",
+  "passed": true,
+  "scope": "Native V2 CPU accounting decomposition, settled hierarchy/runtime consistency and eight concurrent readers",
+  "complete_stage_3_accepted": false,
+  "boot_sha256": "32db3ca25d5d927f3eb95826683bfccced7a489fe0ef5fc56447b36e4a8dd939",
+  "boot_verification_sha256": "0d5eb5ea1c859d62615dde21949a0c6f233914ef373cdf8a5982f07edc0c5a93",
+  "build_audit_sha256": "13f3b2ecface7defae122265fda4b41e235a5b46163a291e348e16fdc28cf64c",
+  "evidence": {
+    "settled": {
+      "path": "runtime/native-cpu-stat-settled-semantics-h2cp4-20261004.json",
+      "sha256": "d9928d737c039952536c10d6098ebca272671097fd7ef4403471f10ee5306590",
+      "source_sha256": "d3dbf01cc3b7b9260b80a33ccbc362703795f6a7d2f3790a045afdc1dbdc4f0d"
+    },
+    "concurrent": {
+      "path": "runtime/native-cpu-stat-concurrent-h2cp4-20261004.json",
+      "sha256": "3e305535540e8b5c685271eb48d4556911cb2db92ec60f216c1b37d7bc987141",
+      "source_sha256": "95f0f3e3feaa396bc5b6b7079a01a4ef41f84c64f33d064aed341a0f700ed262"
+    }
+  },
+  "settled_maximum_difference_usec": 1,
+  "concurrent_readers": 8,
+  "concurrent_total_snapshots": 2136,
+  "concurrent_maximum_difference_usec": 1,
+  "cleanup_passed": true,
+  "ordinary_seccomp": 2
+}

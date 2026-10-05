@@ -1,0 +1,231 @@
+{
+  "scope": "Rootful/rootless native OCI CPU quota, fork/exec, cpuset and competitive weight behavior only",
+  "passed": true,
+  "complete_stage_3_accepted": false,
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h2cp4",
+  "boot_id": "33e13536-7ccc-4e64-a66e-0b4413a56b60",
+  "boot_sha256": "32db3ca25d5d927f3eb95826683bfccced7a489fe0ef5fc56447b36e4a8dd939",
+  "result_path": "runtime/native-cpu-podman-h2cp4-20261004.json",
+  "result_sha256": "12ebf6983610fb62638f6334e2fa6b499d195764ffa6e67071b43e9307cc1113",
+  "probe_sha256": "761fd208cb19b0b0c4f3bb6148b1e5887820c1647a066a55c2fd7e5b41d8fb49",
+  "modes": [
+    {
+      "mode": "rootful",
+      "high_low_cpu_ratio": 3.8959994871690564,
+      "quota_cases": [
+        {
+          "case": "crun-fork-exec",
+          "payloads": [
+            {
+              "mode": "burn",
+              "cpu_max": "50000 100000",
+              "affinity_mask": 192,
+              "cpu_weight": 100,
+              "cpu": 1.498908,
+              "wall": 4.047651,
+              "start_monotonic": 1347.254042,
+              "usage_usec_delta": 2051154,
+              "nr_throttled_delta": 41,
+              "seccomp": 2
+            },
+            {
+              "mode": "burn",
+              "cpu_max": "50000 100000",
+              "affinity_mask": 192,
+              "cpu_weight": 100,
+              "cpu": 0.550619,
+              "wall": 4.048005,
+              "start_monotonic": 1347.254796,
+              "usage_usec_delta": 2050610,
+              "nr_throttled_delta": 41,
+              "seccomp": 2
+            },
+            {
+              "mode": "family",
+              "cpu_max": "50000 100000",
+              "affinity_mask": 192,
+              "cpu_weight": 100,
+              "cpu": 2.054252,
+              "wall": 4.05287,
+              "start_monotonic": 1347.251033,
+              "usage_usec_delta": 2055416,
+              "nr_throttled_delta": 41,
+              "seccomp": 2
+            }
+          ],
+          "used_cores": 0.5068635312753678
+        },
+        {
+          "case": "runc-fork-exec",
+          "payloads": [
+            {
+              "mode": "burn",
+              "cpu_max": "50000 100000",
+              "affinity_mask": 192,
+              "cpu_weight": 100,
+              "cpu": 1.494813,
+              "wall": 4.070293,
+              "start_monotonic": 1353.131478,
+              "usage_usec_delta": 2047718,
+              "nr_throttled_delta": 41,
+              "seccomp": 2
+            },
+            {
+              "mode": "burn",
+              "cpu_max": "50000 100000",
+              "affinity_mask": 192,
+              "cpu_weight": 100,
+              "cpu": 0.551464,
+              "wall": 4.070636,
+              "start_monotonic": 1353.131661,
+              "usage_usec_delta": 2047692,
+              "nr_throttled_delta": 41,
+              "seccomp": 2
+            },
+            {
+              "mode": "family",
+              "cpu_max": "50000 100000",
+              "affinity_mask": 192,
+              "cpu_weight": 100,
+              "cpu": 2.048956,
+              "wall": 4.072704,
+              "start_monotonic": 1353.130799,
+              "usage_usec_delta": 2050195,
+              "nr_throttled_delta": 41,
+              "seccomp": 2
+            }
+          ],
+          "used_cores": 0.5030947498271419
+        },
+        {
+          "case": "live-exec",
+          "payloads": [
+            {
+              "mode": "burn",
+              "cpu_max": "50000 100000",
+              "affinity_mask": 192,
+              "cpu_weight": 100,
+              "cpu": 2.053973,
+              "wall": 4.045816,
+              "start_monotonic": 1359.155743,
+              "usage_usec_delta": 2055029,
+              "nr_throttled_delta": 41,
+              "seccomp": 2
+            }
+          ],
+          "used_cores": 0.5076783027206377
+        }
+      ]
+    },
+    {
+      "mode": "rootless",
+      "high_low_cpu_ratio": 3.887984279185913,
+      "quota_cases": [
+        {
+          "case": "crun-fork-exec",
+          "payloads": [
+            {
+              "mode": "burn",
+              "cpu_max": "50000 100000",
+              "affinity_mask": 192,
+              "cpu_weight": 100,
+              "cpu": 0.585777,
+              "wall": 4.071699,
+              "start_monotonic": 1379.829999,
+              "usage_usec_delta": 2047164,
+              "nr_throttled_delta": 41,
+              "seccomp": 2
+            },
+            {
+              "mode": "burn",
+              "cpu_max": "50000 100000",
+              "affinity_mask": 192,
+              "cpu_weight": 100,
+              "cpu": 1.460747,
+              "wall": 4.071549,
+              "start_monotonic": 1379.830176,
+              "usage_usec_delta": 2046949,
+              "nr_throttled_delta": 41,
+              "seccomp": 2
+            },
+            {
+              "mode": "family",
+              "cpu_max": "50000 100000",
+              "affinity_mask": 192,
+              "cpu_weight": 100,
+              "cpu": 2.051834,
+              "wall": 4.076189,
+              "start_monotonic": 1379.827742,
+              "usage_usec_delta": 2052575,
+              "nr_throttled_delta": 41,
+              "seccomp": 2
+            }
+          ],
+          "used_cores": 0.5033706729496595
+        },
+        {
+          "case": "runc-fork-exec",
+          "payloads": [
+            {
+              "mode": "burn",
+              "cpu_max": "50000 100000",
+              "affinity_mask": 192,
+              "cpu_weight": 100,
+              "cpu": 1.436916,
+              "wall": 4.000855,
+              "start_monotonic": 1385.812294,
+              "usage_usec_delta": 2021289,
+              "nr_throttled_delta": 40,
+              "seccomp": 2
+            },
+            {
+              "mode": "burn",
+              "cpu_max": "50000 100000",
+              "affinity_mask": 192,
+              "cpu_weight": 100,
+              "cpu": 0.583466,
+              "wall": 4.001485,
+              "start_monotonic": 1385.812014,
+              "usage_usec_delta": 2023004,
+              "nr_throttled_delta": 40,
+              "seccomp": 2
+            },
+            {
+              "mode": "family",
+              "cpu_max": "50000 100000",
+              "affinity_mask": 192,
+              "cpu_weight": 100,
+              "cpu": 2.026586,
+              "wall": 4.006976,
+              "start_monotonic": 1385.807626,
+              "usage_usec_delta": 2028138,
+              "nr_throttled_delta": 40,
+              "seccomp": 2
+            }
+          ],
+          "used_cores": 0.5057644468047725
+        },
+        {
+          "case": "live-exec",
+          "payloads": [
+            {
+              "mode": "burn",
+              "cpu_max": "50000 100000",
+              "affinity_mask": 192,
+              "cpu_weight": 100,
+              "cpu": 2.051737,
+              "wall": 4.056837,
+              "start_monotonic": 1392.044123,
+              "usage_usec_delta": 2052759,
+              "nr_throttled_delta": 41,
+              "seccomp": 2
+            }
+          ],
+          "used_cores": 0.5057479509282725
+        }
+      ]
+    }
+  ],
+  "cleanup_passed": true,
+  "ordinary_seccomp": 2
+}

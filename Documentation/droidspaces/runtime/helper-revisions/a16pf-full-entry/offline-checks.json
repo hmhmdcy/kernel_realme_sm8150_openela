@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "offline_only": true,
+  "full_suite_executed_on_phone": false,
+  "tests": 17,
+  "tested_sources_sha256": {
+    "accept_phone.py": "565fc218bd0c40d4c535ea2f817dd1add8516096eadc31cff14db5549d35504f",
+    "device_runtime.py": "bf34b93009d4dfab7ee612411f8c9b76c6cdd70f2c076c84a4dc50debc8b4155",
+    "test_runtime_acceptance.py": "bb929a4adba9fac2b0e333bfc208e00ee7a2e9753d4195ab2039313dc4b5d0e3"
+  },
+  "release_aliases_checked": [
+    "dualio",
+    "h5bf2",
+    "a16pf"
+  ],
+  "output": "cted feature probes using docs/test-policy.md.\n..............\n----------------------------------------------------------------------\nRan 17 tests in 0.528s\n\nOK\n"
+}

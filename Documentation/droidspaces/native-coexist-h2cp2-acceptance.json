@@ -1,0 +1,161 @@
+{
+  "scope": "Scoped V1/V2 CPU/cpuset coexistence and actual OCI negative admission only",
+  "passed": true,
+  "complete_stage_3_accepted": false,
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h2cp2",
+  "boot_id": "5a19baf4-ecaa-4fbf-95ef-bbf0d239f5f1",
+  "result_path": "runtime/native-cpu-cpuset-coexist-fork-h2cp2-20261004.json",
+  "result_sha256": "aa91230caaef4db969089fe2bcb97723f41e6e4f9774664591e8e81ea8063c29",
+  "probe_sha256": "1c96921d6bd4e16b8a7d3950fb235ea2b0464c7f3035c6f82cc3402192e8e12a",
+  "entry_helper_sha256": "dfe8f63d16a155ce72d54ad708ea37d59933c43c7f7a43cc0259af7b4ca74575",
+  "durable_launcher_sha256": "53b458f2640b2281d6a9349e8e5f799dbaedeafc014eb9acd0bf3889a3c84709",
+  "ordinary_guest_seccomp": 2,
+  "operator_and_workers_seccomp": 0,
+  "cases": [
+    {
+      "cpu": 2.0187630000000003,
+      "wall": 4.017590243999848,
+      "affinity": [
+        6,
+        7
+      ],
+      "membership": [
+        "4:schedtune:/",
+        "3:cpuset:/",
+        "2:cpu:/",
+        "1:blkio:/",
+        "0::/rmx1931-coexist-47ed897850"
+      ],
+      "seccomp": 0,
+      "case": "legacy-root-selects-native-half-cpu",
+      "used_cores": 0.5024810588921962
+    },
+    {
+      "cpu": 1.004016,
+      "wall": 4.0007018050000624,
+      "affinity": [
+        6,
+        7
+      ],
+      "membership": [
+        "4:schedtune:/",
+        "3:cpuset:/",
+        "2:cpu:/rmx1931-coexist-47ed897850",
+        "1:blkio:/",
+        "0::/rmx1931-coexist-47ed897850"
+      ],
+      "seccomp": 0,
+      "case": "nonroot-legacy-selects-quarter-cpu",
+      "used_cores": 0.2509599687597772
+    },
+    {
+      "cpu": 3.9758179999999994,
+      "wall": 4.00046628400014,
+      "affinity": [
+        6,
+        7
+      ],
+      "membership": [
+        "4:schedtune:/",
+        "3:cpuset:/",
+        "2:cpu:/rmx1931-coexist-47ed897850",
+        "1:blkio:/",
+        "0::/rmx1931-coexist-47ed897850"
+      ],
+      "seccomp": 0,
+      "case": "legacy-one-cpu-native-half-not-combined",
+      "used_cores": 0.9938386472350182
+    },
+    {
+      "cpu": 2.0097010000000006,
+      "wall": 4.000789045000147,
+      "affinity": [
+        6,
+        7
+      ],
+      "membership": [
+        "4:schedtune:/",
+        "3:cpuset:/",
+        "2:cpu:/",
+        "1:blkio:/",
+        "0::/rmx1931-coexist-47ed897850"
+      ],
+      "seccomp": 0,
+      "case": "legacy-root-restores-native-half-cpu",
+      "used_cores": 0.5023261605136511
+    },
+    {
+      "cpu": 2.1000000000270802e-05,
+      "wall": 1.7342999854008667e-05,
+      "affinity": [
+        6
+      ],
+      "membership": [
+        "4:schedtune:/",
+        "3:cpuset:/rmx1931-coexist-47ed897850",
+        "2:cpu:/",
+        "1:blkio:/",
+        "0::/rmx1931-coexist-47ed897850"
+      ],
+      "seccomp": 0,
+      "case": "cpuset-intersection"
+    },
+    {
+      "cpu": 1.600000000046009e-05,
+      "wall": 1.3593999938166235e-05,
+      "affinity": [
+        6,
+        7
+      ],
+      "membership": [
+        "4:schedtune:/",
+        "3:cpuset:/rmx1931-coexist-47ed897850",
+        "2:cpu:/",
+        "1:blkio:/",
+        "0::/rmx1931-coexist-47ed897850"
+      ],
+      "seccomp": 0,
+      "case": "disjoint-cpuset-native-fallback"
+    },
+    {
+      "cpu": 1.600000000046009e-05,
+      "wall": 1.1927000059586135e-05,
+      "affinity": [
+        7
+      ],
+      "membership": [
+        "4:schedtune:/",
+        "3:cpuset:/rmx1931-coexist-47ed897850",
+        "2:cpu:/",
+        "1:blkio:/",
+        "0::/rmx1931-coexist-47ed897850"
+      ],
+      "seccomp": 0,
+      "case": "cpuset-intersection-after-conflict"
+    },
+    {
+      "cpu": 1.2999999999152578e-05,
+      "wall": 1.0104000011779135e-05,
+      "affinity": [
+        6,
+        7
+      ],
+      "membership": [
+        "4:schedtune:/",
+        "3:cpuset:/",
+        "2:cpu:/",
+        "1:blkio:/",
+        "0::/rmx1931-coexist-47ed897850"
+      ],
+      "seccomp": 0,
+      "case": "legacy-cpuset-root-restores-native-mask"
+    },
+    {
+      "case": "native-policy-refuses-nonroot-legacy-peer",
+      "returncode": 126,
+      "stdout": "",
+      "stderr": "Error: OCI runtime error: crun: RMX1931_RESOURCE_POLICY_ERROR: Native policy refused: peer still belongs to a non-root legacy CPU group\n"
+    }
+  ],
+  "cleanup_errors": []
+}

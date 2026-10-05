@@ -1,0 +1,1036 @@
+{
+  "observed_at": "2026-10-04T05:56:03.180297+00:00",
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h2cp",
+  "boot_id": "c9b7751f-d8f9-417f-a0a1-ed4f58ae5d83",
+  "passed": true,
+  "scope": "native V2 CPU/IO/memory/pids persistent policy lifecycle regression only",
+  "complete_native_cpu_cpuset_stage_accepted": false,
+  "cpu_backend": "v2",
+  "evidence": {
+    "prepare": {
+      "path": "runtime/native-policy-lifecycle-prepare-h2cp-20261004.json",
+      "sha256": "b63168cb8a07c91e92d2ec75a4083bb520c9ca904ab11d50e6c8b1b0aaba2f4a",
+      "source_sha256": "452c5a838d8c6ea1dac3d88b6b9335c48bc0541a0dc507488bf79af021dc1edc"
+    },
+    "admission": {
+      "path": "runtime/native-policy-admission-h2cp-20261004.json",
+      "sha256": "35282586048b0b0388768cba51c3e8b3fb7c8025f6c7f3a9dabb010b9b7e1121",
+      "source_sha256": "92dcfe2ec8283132ea3227afd112f54035bb67334dbdd0d821a63ef11c5b5688"
+    },
+    "outage-stop": {
+      "path": "runtime/native-policy-server-outage-stop-h2cp-20261004.json",
+      "sha256": "ceedcb03fafdfaf7918c9272083e3a962196a5cd2671fff8314b4628b2ebcd1c",
+      "source_sha256": "478f8202307ef7f784a907fec94ea4ef6a8500878e1d767dc0fbbd40069fb1da"
+    },
+    "outage": {
+      "path": "runtime/native-policy-outage-h2cp-20261004.json",
+      "sha256": "522b103b791a2f73f694cfd736d44a1177ff6ee51307974f3f70757de9c6c94e",
+      "source_sha256": "452c5a838d8c6ea1dac3d88b6b9335c48bc0541a0dc507488bf79af021dc1edc"
+    },
+    "resume": {
+      "path": "runtime/native-policy-after-outage-h2cp-20261004.json",
+      "sha256": "87bf956684c09d2c53968eb6e9fcb8e5560069a4f40fc0fd0101d0b495ed0053",
+      "source_sha256": "452c5a838d8c6ea1dac3d88b6b9335c48bc0541a0dc507488bf79af021dc1edc"
+    },
+    "stop": {
+      "path": "runtime/native-policy-guest-restart-workloads-stopped-h2cp-20261004.json",
+      "sha256": "9605ea76755aed1e5ac5b9e7a90df6615f3ec3ff8d5fe076e46737aaf015d1d4",
+      "source_sha256": "452c5a838d8c6ea1dac3d88b6b9335c48bc0541a0dc507488bf79af021dc1edc"
+    },
+    "guest-resume": {
+      "path": "runtime/native-policy-after-guest-restart-h2cp-20261004.json",
+      "sha256": "05b0a40fcc8651b3c7f5a8ae3e51ef9cb5f5fa0af01c7f887ad3c888d4d03dda",
+      "source_sha256": "452c5a838d8c6ea1dac3d88b6b9335c48bc0541a0dc507488bf79af021dc1edc"
+    },
+    "crun": {
+      "path": "runtime/native-policy-smoke-crun-h2cp-20261004.json",
+      "sha256": "8a5ff489c8730515e6de71f20d6454af67401cceb39cfed8aa64c6924e03e571",
+      "source_sha256": "5d3a10bf12142c2a98b4404731da558c5edf34c5531ffcb7f63b8cf1cf7f4e43"
+    },
+    "runc": {
+      "path": "runtime/native-policy-smoke-runc-h2cp-20261004.json",
+      "sha256": "38a00761b98ff29317188d92c1a4e563f6fa91daad8015aa0a7fd0be6568a4cf",
+      "source_sha256": "5d3a10bf12142c2a98b4404731da558c5edf34c5531ffcb7f63b8cf1cf7f4e43"
+    },
+    "cleanup": {
+      "path": "runtime/native-policy-lifecycle-cleanup-h2cp-20261004.json",
+      "sha256": "1821491477c8bf8c8291e2d24e06a22dc6b64113242264d7fff95c4c1bde9f25",
+      "source_sha256": "452c5a838d8c6ea1dac3d88b6b9335c48bc0541a0dc507488bf79af021dc1edc"
+    },
+    "native-policy-guest-before-h2cp-20261004": {
+      "path": "runtime/native-policy-guest-before-h2cp-20261004.json",
+      "sha256": "63c0d5e56376e9cc35f15d7698524841362ff93821b22218a4d8db586ea3be59"
+    },
+    "native-policy-guest-after-h2cp-20261004": {
+      "path": "runtime/native-policy-guest-after-h2cp-20261004.json",
+      "sha256": "3360052144eae7c2fb30d52413d785ad0ebf04a717371622688c4d0bae152bd6"
+    },
+    "native-policy-oom-log-bound-h2cp-20261004": {
+      "path": "runtime/native-policy-oom-log-bound-h2cp-20261004.json",
+      "sha256": "3f8776160125b05960e23c4811e700b3f887d87a0ea9ff6f11ae840b6944df1f"
+    }
+  },
+  "guest_restart_before": "pid:[4026535318]",
+  "guest_restart_after": "pid:[4026535311]",
+  "registry_persisted_sha256": "71d4737b44af22e99a9bc7dcc81cd3bc79d1beab5d19afaac1a2d3e39401af9f",
+  "modes": [
+    {
+      "mode": "rootful",
+      "name": "rmx1931-policy-test-native-h2cp-20261004-rootful",
+      "profile": "rmx1931-policy-test-native-h2cp-20261004-rootful",
+      "image": "localhost/rmx1931-policy-test-native-h2cp-20261004-rootful:1",
+      "measurements": [
+        {
+          "phase": "create",
+          "neighbor": false,
+          "cpu": {
+            "wall": 3.039122,
+            "cpu": 1.55231,
+            "seccomp": 2
+          },
+          "used_cores": 0.5107758095923758,
+          "io": [
+            {
+              "operation": "write",
+              "seconds": 4.062088,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            },
+            {
+              "operation": "read",
+              "seconds": 4.014775,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            }
+          ],
+          "pids": {
+            "children": 30,
+            "errno": 11,
+            "seccomp": 2,
+            "events_before": "max 0\n",
+            "events_after": "max 1\n"
+          }
+        },
+        {
+          "phase": "unmanaged",
+          "neighbor": true,
+          "cpu": {
+            "wall": 3.003401,
+            "cpu": 11.936212,
+            "seccomp": 2
+          },
+          "used_cores": 3.9742318791263633,
+          "io": [
+            {
+              "operation": "write",
+              "seconds": 0.120429,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            },
+            {
+              "operation": "read",
+              "seconds": 0.03072,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            }
+          ]
+        },
+        {
+          "phase": "stop-start",
+          "neighbor": false,
+          "cpu": {
+            "wall": 3.007031,
+            "cpu": 1.536733,
+            "seccomp": 2
+          },
+          "used_cores": 0.5110466104273617,
+          "io": [
+            {
+              "operation": "write",
+              "seconds": 4.035693,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            },
+            {
+              "operation": "read",
+              "seconds": 4.013005,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            }
+          ],
+          "pids": {
+            "children": 30,
+            "errno": 11,
+            "seccomp": 2,
+            "events_before": "max 0\n",
+            "events_after": "max 1\n"
+          }
+        },
+        {
+          "phase": "recreate",
+          "neighbor": false,
+          "cpu": {
+            "wall": 3.073639,
+            "cpu": 1.548872,
+            "seccomp": 2
+          },
+          "used_cores": 0.5039212477457502,
+          "io": [
+            {
+              "operation": "write",
+              "seconds": 4.057572,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            },
+            {
+              "operation": "read",
+              "seconds": 4.011164,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            }
+          ],
+          "pids": {
+            "children": 30,
+            "errno": 11,
+            "seccomp": 2,
+            "events_before": "max 0\n",
+            "events_after": "max 1\n"
+          }
+        },
+        {
+          "phase": "resume",
+          "neighbor": false,
+          "cpu": {
+            "wall": 3.009227,
+            "cpu": 1.5384,
+            "seccomp": 2
+          },
+          "used_cores": 0.5112276342063925,
+          "io": [
+            {
+              "operation": "write",
+              "seconds": 4.06481,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            },
+            {
+              "operation": "read",
+              "seconds": 4.016793,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            }
+          ],
+          "pids": {
+            "children": 30,
+            "errno": 11,
+            "seccomp": 2,
+            "events_before": "max 0\n",
+            "events_after": "max 1\n"
+          }
+        },
+        {
+          "phase": "resume",
+          "neighbor": false,
+          "cpu": {
+            "wall": 3.067728,
+            "cpu": 1.555184,
+            "seccomp": 2
+          },
+          "used_cores": 0.5069497686887494,
+          "io": [
+            {
+              "operation": "write",
+              "seconds": 4.071022,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            },
+            {
+              "operation": "read",
+              "seconds": 4.00753,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            }
+          ],
+          "pids": {
+            "children": 30,
+            "errno": 11,
+            "seccomp": 2,
+            "events_before": "max 0\n",
+            "events_after": "max 1\n"
+          }
+        }
+      ],
+      "initial_cid": "d3a33ec635a04f7a091434ef709f292e1dd15c6c2c60188806192c82ae81ba39",
+      "neighbor_cid": "7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b",
+      "snapshots": [
+        {
+          "phase": "create",
+          "neighbor": false,
+          "cid": "d3a33ec635a04f7a091434ef709f292e1dd15c6c2c60188806192c82ae81ba39",
+          "pid": 3607,
+          "cpu_backend": "v2",
+          "cpu_group": "/machine.slice/libpod-d3a33ec635a04f7a091434ef709f292e1dd15c6c2c60188806192c82ae81ba39.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/machine.slice/libpod-d3a33ec635a04f7a091434ef709f292e1dd15c6c2c60188806192c82ae81ba39.scope/container",
+          "first_payload": {
+            "memory": 67108864,
+            "pids": 32,
+            "oom_group": 1,
+            "io": "7:312 rbps=2097152 wbps=2097152 riops=max wiops=max",
+            "cpu_max": "50000 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "unmanaged",
+          "neighbor": true,
+          "cid": "7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b",
+          "pid": 3664,
+          "cpu_backend": "v2",
+          "cpu_group": "/machine.slice/libpod-7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/machine.slice/libpod-7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b.scope/container",
+          "first_payload": {
+            "memory": 100663296,
+            "pids": 48,
+            "oom_group": 0,
+            "io": "",
+            "cpu_max": "max 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "stop-start",
+          "neighbor": false,
+          "cid": "d3a33ec635a04f7a091434ef709f292e1dd15c6c2c60188806192c82ae81ba39",
+          "pid": 3989,
+          "cpu_backend": "v2",
+          "cpu_group": "/machine.slice/libpod-d3a33ec635a04f7a091434ef709f292e1dd15c6c2c60188806192c82ae81ba39.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/machine.slice/libpod-d3a33ec635a04f7a091434ef709f292e1dd15c6c2c60188806192c82ae81ba39.scope/container",
+          "first_payload": {
+            "memory": 67108864,
+            "pids": 32,
+            "oom_group": 1,
+            "io": "7:312 rbps=2097152 wbps=2097152 riops=max wiops=max",
+            "cpu_max": "50000 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "recreate",
+          "neighbor": false,
+          "cid": "6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190",
+          "pid": 4241,
+          "cpu_backend": "v2",
+          "cpu_group": "/machine.slice/libpod-6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/machine.slice/libpod-6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190.scope/container",
+          "first_payload": {
+            "memory": 67108864,
+            "pids": 32,
+            "oom_group": 1,
+            "io": "7:312 rbps=2097152 wbps=2097152 riops=max wiops=max",
+            "cpu_max": "50000 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "after-oom",
+          "neighbor": false,
+          "cid": "6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190",
+          "pid": 4502,
+          "cpu_backend": "v2",
+          "cpu_group": "/machine.slice/libpod-6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/machine.slice/libpod-6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190.scope/container",
+          "first_payload": {
+            "memory": 67108864,
+            "pids": 32,
+            "oom_group": 1,
+            "io": "7:312 rbps=2097152 wbps=2097152 riops=max wiops=max",
+            "cpu_max": "50000 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "neighbor-after-oom",
+          "neighbor": true,
+          "cid": "7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b",
+          "pid": 3664,
+          "cpu_backend": "v2",
+          "cpu_group": "/machine.slice/libpod-7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/machine.slice/libpod-7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b.scope/container",
+          "first_payload": {
+            "memory": 100663296,
+            "pids": 48,
+            "oom_group": 0,
+            "io": "",
+            "cpu_max": "max 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "still-limited-during-outage",
+          "neighbor": false,
+          "cid": "6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190",
+          "pid": 5859,
+          "cpu_backend": "v2",
+          "cpu_group": "/machine.slice/libpod-6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/machine.slice/libpod-6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190.scope/container",
+          "first_payload": {
+            "memory": 67108864,
+            "pids": 32,
+            "oom_group": 1,
+            "io": "7:312 rbps=2097152 wbps=2097152 riops=max wiops=max",
+            "cpu_max": "50000 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "neighbor-outage",
+          "neighbor": true,
+          "cid": "7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b",
+          "pid": 3664,
+          "cpu_backend": "v2",
+          "cpu_group": "/machine.slice/libpod-7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/machine.slice/libpod-7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b.scope/container",
+          "first_payload": {
+            "memory": 100663296,
+            "pids": 48,
+            "oom_group": 0,
+            "io": "",
+            "cpu_max": "max 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "resume",
+          "neighbor": false,
+          "cid": "6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190",
+          "pid": 7355,
+          "cpu_backend": "v2",
+          "cpu_group": "/machine.slice/libpod-6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/machine.slice/libpod-6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190.scope/container",
+          "first_payload": {
+            "memory": 67108864,
+            "pids": 32,
+            "oom_group": 1,
+            "io": "7:312 rbps=2097152 wbps=2097152 riops=max wiops=max",
+            "cpu_max": "50000 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "neighbor-resume",
+          "neighbor": true,
+          "cid": "7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b",
+          "pid": 3664,
+          "cpu_backend": "v2",
+          "cpu_group": "/machine.slice/libpod-7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/machine.slice/libpod-7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b.scope/container",
+          "first_payload": {
+            "memory": 100663296,
+            "pids": 48,
+            "oom_group": 0,
+            "io": "",
+            "cpu_max": "max 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "resume",
+          "neighbor": false,
+          "cid": "6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190",
+          "pid": 675,
+          "cpu_backend": "v2",
+          "cpu_group": "/machine.slice/libpod-6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/machine.slice/libpod-6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190.scope/container",
+          "first_payload": {
+            "memory": 67108864,
+            "pids": 32,
+            "oom_group": 1,
+            "io": "7:312 rbps=2097152 wbps=2097152 riops=max wiops=max",
+            "cpu_max": "50000 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "neighbor-resume",
+          "neighbor": true,
+          "cid": "7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b",
+          "pid": 708,
+          "cpu_backend": "v2",
+          "cpu_group": "/machine.slice/libpod-7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/machine.slice/libpod-7d4b743acaf545158a60c7c8048743977dab6f33f4daca4133d9af552510ac2b.scope/container",
+          "first_payload": {
+            "memory": 100663296,
+            "pids": 48,
+            "oom_group": 0,
+            "io": "",
+            "cpu_max": "max 100000",
+            "seccomp": 2
+          }
+        }
+      ],
+      "recreated_cid": "6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190",
+      "oom": {
+        "exec_exit": 137,
+        "container_exit": "137",
+        "state": {
+          "OciVersion": "1.1.0",
+          "Status": "exited",
+          "Running": false,
+          "Paused": false,
+          "Restarting": false,
+          "OOMKilled": false,
+          "Dead": false,
+          "Pid": 0,
+          "ExitCode": 137,
+          "Error": "",
+          "StartedAt": "2026-10-04T05:36:26.700999331Z",
+          "FinishedAt": "2026-10-04T05:36:41.053532063Z",
+          "Health": {
+            "Status": "",
+            "FailingStreak": 0,
+            "Log": null
+          },
+          "CheckpointedAt": "0001-01-01T00:00:00Z",
+          "RestoredAt": "0001-01-01T00:00:00Z"
+        }
+      },
+      "admission": {
+        "negative": [
+          {
+            "case": "unknown",
+            "exit": 126,
+            "diagnostic": "Error: OCI runtime error: crun: RMX1931_RESOURCE_POLICY_ERROR: Unknown policy or policy belongs to a different user: rmx1931-policy-does-not-exist\n"
+          },
+          {
+            "case": "wrong-user",
+            "exit": 126,
+            "diagnostic": "Error: OCI runtime error: crun: RMX1931_RESOURCE_POLICY_ERROR: Unknown policy or policy belongs to a different user: rmx1931-policy-test-native-h2cp-20261004-rootless\n"
+          }
+        ],
+        "profile_change_exit": 125,
+        "profile_remove_exit": 125,
+        "rootless_admin_exit": 125,
+        "memory_events_before": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n",
+        "memory_events_after": null,
+        "event_file_removed_by_runtime": true,
+        "kernel_oom_log_required": true,
+        "oom_exec_exit": 137,
+        "oom_container_id": "6acde8509e8ba6a2e0ff04eaa5c06439eb2c40dfbf9e8d6cd4c335f01e86f190"
+      },
+      "outage": {
+        "exec_exit": 127,
+        "start_exit": 125,
+        "create_exit": 127,
+        "diagnostic": "Error: crun: RMX1931_RESOURCE_POLICY_ERROR: Managed container refused: policy service unavailable: [Errno 2] No such file or directory: OCI runtime attempted to invoke a command that was not found\n"
+      }
+    },
+    {
+      "mode": "rootless",
+      "name": "rmx1931-policy-test-native-h2cp-20261004-rootless",
+      "profile": "rmx1931-policy-test-native-h2cp-20261004-rootless",
+      "image": "localhost/rmx1931-policy-test-native-h2cp-20261004-rootless:1",
+      "measurements": [
+        {
+          "phase": "create",
+          "neighbor": false,
+          "cpu": {
+            "wall": 3.082998,
+            "cpu": 1.545455,
+            "seccomp": 2
+          },
+          "used_cores": 0.5012831665800627,
+          "io": [
+            {
+              "operation": "write",
+              "seconds": 4.043536,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            },
+            {
+              "operation": "read",
+              "seconds": 4.003973,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            }
+          ],
+          "pids": {
+            "children": 30,
+            "errno": 11,
+            "seccomp": 2,
+            "events_before": "max 0\n",
+            "events_after": "max 1\n"
+          }
+        },
+        {
+          "phase": "unmanaged",
+          "neighbor": true,
+          "cpu": {
+            "wall": 3.00205,
+            "cpu": 11.908869,
+            "seccomp": 2
+          },
+          "used_cores": 3.966912276610982,
+          "io": [
+            {
+              "operation": "write",
+              "seconds": 0.117145,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            },
+            {
+              "operation": "read",
+              "seconds": 0.009969,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            }
+          ]
+        },
+        {
+          "phase": "stop-start",
+          "neighbor": false,
+          "cpu": {
+            "wall": 3.019398,
+            "cpu": 1.551718,
+            "seccomp": 2
+          },
+          "used_cores": 0.513916350212857,
+          "io": [
+            {
+              "operation": "write",
+              "seconds": 4.0564,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            },
+            {
+              "operation": "read",
+              "seconds": 4.004703,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            }
+          ],
+          "pids": {
+            "children": 30,
+            "errno": 11,
+            "seccomp": 2,
+            "events_before": "max 0\n",
+            "events_after": "max 1\n"
+          }
+        },
+        {
+          "phase": "recreate",
+          "neighbor": false,
+          "cpu": {
+            "wall": 3.021274,
+            "cpu": 1.559365,
+            "seccomp": 2
+          },
+          "used_cores": 0.5161282955468455,
+          "io": [
+            {
+              "operation": "write",
+              "seconds": 4.063317,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            },
+            {
+              "operation": "read",
+              "seconds": 4.014188,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            }
+          ],
+          "pids": {
+            "children": 30,
+            "errno": 11,
+            "seccomp": 2,
+            "events_before": "max 0\n",
+            "events_after": "max 1\n"
+          }
+        },
+        {
+          "phase": "resume",
+          "neighbor": false,
+          "cpu": {
+            "wall": 3.025013,
+            "cpu": 1.548075,
+            "seccomp": 2
+          },
+          "used_cores": 0.5117581312873697,
+          "io": [
+            {
+              "operation": "write",
+              "seconds": 4.058732,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            },
+            {
+              "operation": "read",
+              "seconds": 4.010822,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            }
+          ],
+          "pids": {
+            "children": 30,
+            "errno": 11,
+            "seccomp": 2,
+            "events_before": "max 0\n",
+            "events_after": "max 1\n"
+          }
+        },
+        {
+          "phase": "resume",
+          "neighbor": false,
+          "cpu": {
+            "wall": 3.038942,
+            "cpu": 1.544597,
+            "seccomp": 2
+          },
+          "used_cores": 0.5082680090636807,
+          "io": [
+            {
+              "operation": "write",
+              "seconds": 4.049416,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            },
+            {
+              "operation": "read",
+              "seconds": 4.023128,
+              "bytes": 8388608,
+              "device": "7:312",
+              "seccomp": 2
+            }
+          ],
+          "pids": {
+            "children": 30,
+            "errno": 11,
+            "seccomp": 2,
+            "events_before": "max 0\n",
+            "events_after": "max 1\n"
+          }
+        }
+      ],
+      "initial_cid": "a56cd309a21365ffeac6f72c06d95cdd0fe360e39af388c2c490c3214094a4be",
+      "neighbor_cid": "f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9",
+      "snapshots": [
+        {
+          "phase": "create",
+          "neighbor": false,
+          "cid": "a56cd309a21365ffeac6f72c06d95cdd0fe360e39af388c2c490c3214094a4be",
+          "pid": 4640,
+          "cpu_backend": "v2",
+          "cpu_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-a56cd309a21365ffeac6f72c06d95cdd0fe360e39af388c2c490c3214094a4be.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-a56cd309a21365ffeac6f72c06d95cdd0fe360e39af388c2c490c3214094a4be.scope/container",
+          "first_payload": {
+            "memory": 67108864,
+            "pids": 32,
+            "oom_group": 1,
+            "io": "7:312 rbps=2097152 wbps=2097152 riops=max wiops=max",
+            "cpu_max": "50000 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "unmanaged",
+          "neighbor": true,
+          "cid": "f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9",
+          "pid": 4674,
+          "cpu_backend": "v2",
+          "cpu_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9.scope/container",
+          "first_payload": {
+            "memory": 100663296,
+            "pids": 48,
+            "oom_group": 0,
+            "io": "",
+            "cpu_max": "max 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "stop-start",
+          "neighbor": false,
+          "cid": "a56cd309a21365ffeac6f72c06d95cdd0fe360e39af388c2c490c3214094a4be",
+          "pid": 5027,
+          "cpu_backend": "v2",
+          "cpu_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-a56cd309a21365ffeac6f72c06d95cdd0fe360e39af388c2c490c3214094a4be.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-a56cd309a21365ffeac6f72c06d95cdd0fe360e39af388c2c490c3214094a4be.scope/container",
+          "first_payload": {
+            "memory": 67108864,
+            "pids": 32,
+            "oom_group": 1,
+            "io": "7:312 rbps=2097152 wbps=2097152 riops=max wiops=max",
+            "cpu_max": "50000 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "recreate",
+          "neighbor": false,
+          "cid": "1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf",
+          "pid": 5260,
+          "cpu_backend": "v2",
+          "cpu_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf.scope/container",
+          "first_payload": {
+            "memory": 67108864,
+            "pids": 32,
+            "oom_group": 1,
+            "io": "7:312 rbps=2097152 wbps=2097152 riops=max wiops=max",
+            "cpu_max": "50000 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "after-oom",
+          "neighbor": false,
+          "cid": "1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf",
+          "pid": 5541,
+          "cpu_backend": "v2",
+          "cpu_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf.scope/container",
+          "first_payload": {
+            "memory": 67108864,
+            "pids": 32,
+            "oom_group": 1,
+            "io": "7:312 rbps=2097152 wbps=2097152 riops=max wiops=max",
+            "cpu_max": "50000 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "neighbor-after-oom",
+          "neighbor": true,
+          "cid": "f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9",
+          "pid": 4674,
+          "cpu_backend": "v2",
+          "cpu_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9.scope/container",
+          "first_payload": {
+            "memory": 100663296,
+            "pids": 48,
+            "oom_group": 0,
+            "io": "",
+            "cpu_max": "max 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "still-limited-during-outage",
+          "neighbor": false,
+          "cid": "1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf",
+          "pid": 6105,
+          "cpu_backend": "v2",
+          "cpu_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf.scope/container",
+          "first_payload": {
+            "memory": 67108864,
+            "pids": 32,
+            "oom_group": 1,
+            "io": "7:312 rbps=2097152 wbps=2097152 riops=max wiops=max",
+            "cpu_max": "50000 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "neighbor-outage",
+          "neighbor": true,
+          "cid": "f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9",
+          "pid": 4674,
+          "cpu_backend": "v2",
+          "cpu_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9.scope/container",
+          "first_payload": {
+            "memory": 100663296,
+            "pids": 48,
+            "oom_group": 0,
+            "io": "",
+            "cpu_max": "max 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "resume",
+          "neighbor": false,
+          "cid": "1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf",
+          "pid": 7590,
+          "cpu_backend": "v2",
+          "cpu_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf.scope/container",
+          "first_payload": {
+            "memory": 67108864,
+            "pids": 32,
+            "oom_group": 1,
+            "io": "7:312 rbps=2097152 wbps=2097152 riops=max wiops=max",
+            "cpu_max": "50000 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "neighbor-resume",
+          "neighbor": true,
+          "cid": "f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9",
+          "pid": 4674,
+          "cpu_backend": "v2",
+          "cpu_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9.scope/container",
+          "first_payload": {
+            "memory": 100663296,
+            "pids": 48,
+            "oom_group": 0,
+            "io": "",
+            "cpu_max": "max 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "resume",
+          "neighbor": false,
+          "cid": "1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf",
+          "pid": 936,
+          "cpu_backend": "v2",
+          "cpu_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf.scope/container",
+          "first_payload": {
+            "memory": 67108864,
+            "pids": 32,
+            "oom_group": 1,
+            "io": "7:312 rbps=2097152 wbps=2097152 riops=max wiops=max",
+            "cpu_max": "50000 100000",
+            "seccomp": 2
+          }
+        },
+        {
+          "phase": "neighbor-resume",
+          "neighbor": true,
+          "cid": "f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9",
+          "pid": 973,
+          "cpu_backend": "v2",
+          "cpu_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9.scope/container",
+          "legacy_cpu_group": "/",
+          "v2_group": "/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-f736cdeac60dba7bb3a81ca459576a582d413810dbc3f378f4fc3c513f2452c9.scope/container",
+          "first_payload": {
+            "memory": 100663296,
+            "pids": 48,
+            "oom_group": 0,
+            "io": "",
+            "cpu_max": "max 100000",
+            "seccomp": 2
+          }
+        }
+      ],
+      "recreated_cid": "1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf",
+      "oom": {
+        "exec_exit": 137,
+        "container_exit": "137",
+        "state": {
+          "OciVersion": "1.1.0",
+          "Status": "exited",
+          "Running": false,
+          "Paused": false,
+          "Restarting": false,
+          "OOMKilled": false,
+          "Dead": false,
+          "Pid": 0,
+          "ExitCode": 137,
+          "Error": "",
+          "StartedAt": "2026-10-04T05:37:22.682168918Z",
+          "FinishedAt": "2026-10-04T05:37:38.440204447Z",
+          "Health": {
+            "Status": "",
+            "FailingStreak": 0,
+            "Log": null
+          },
+          "CheckpointedAt": "0001-01-01T00:00:00Z",
+          "RestoredAt": "0001-01-01T00:00:00Z"
+        }
+      },
+      "admission": {
+        "negative": [
+          {
+            "case": "unknown",
+            "exit": 126,
+            "diagnostic": "Error: OCI runtime error: crun: RMX1931_RESOURCE_POLICY_ERROR: Unknown policy or policy belongs to a different user: rmx1931-policy-does-not-exist\n"
+          },
+          {
+            "case": "wrong-user",
+            "exit": 126,
+            "diagnostic": "Error: OCI runtime error: crun: RMX1931_RESOURCE_POLICY_ERROR: Unknown policy or policy belongs to a different user: rmx1931-policy-test-native-h2cp-20261004-rootful\n"
+          }
+        ],
+        "profile_change_exit": 125,
+        "profile_remove_exit": 125,
+        "rootless_admin_exit": 125,
+        "memory_events_before": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n",
+        "memory_events_after": null,
+        "event_file_removed_by_runtime": true,
+        "kernel_oom_log_required": true,
+        "oom_exec_exit": 137,
+        "oom_container_id": "1edfa91681bd4bfb9ad8c0bd78b49acdfc334cbed82cc9fdaeb7535b8f2f14cf"
+      },
+      "outage": {
+        "exec_exit": 127,
+        "start_exit": 125,
+        "create_exit": 127,
+        "diagnostic": "Error: crun: RMX1931_RESOURCE_POLICY_ERROR: Managed container refused: policy service unavailable: [Errno 2] No such file or directory: OCI runtime attempted to invoke a command that was not found\n"
+      }
+    }
+  ],
+  "cleanup_passed": true,
+  "normal_guest_seccomp": 2,
+  "selinux": "Enforcing",
+  "fatal_kernel_log": false,
+  "remaining_stage3": [
+    "Podman native weight regression",
+    "rootless cpuset fix validation",
+    "V1/V2 coexistence",
+    "CPU quota/threaded hierarchy and Android performance policy regression"
+  ]
+}

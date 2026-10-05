@@ -1,0 +1,108 @@
+{
+  "observed_at": "2026-10-04T14:29:41.245007+00:00",
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h3bm2",
+  "boot_id": "7b6e7c93-825c-4bf7-9d4c-584c1553c14c",
+  "stage": "harden3-binfmt-fix",
+  "passed": true,
+  "complete_stage_4_accepted": true,
+  "boot_sha256": "689c71a2374bebbac24a348b3dcb2d31b413f80046f96ae2408ad409bbd36005",
+  "build_audit_sha256": "ae61d1b0bfa9ac149afa49690d15cf87dea4e34491fbde8c65fbbf7927271ea6",
+  "boot_verification_sha256": "f381985f9f1422a6bbecbb39302fb7eceb02c218d8b60f32d34001b289d9c028",
+  "predecessor_stage3_acceptance_sha256": "d45d179169585b7079bc208d7682efaff9e7b87f54489434c40206d249d0e619",
+  "evidence": {
+    "filter-preservation": {
+      "path": "runtime/binfmt-seccomp-setresuid-h3bm2-20261004.json",
+      "sha256": "d56e251c08f0d770f77a110fe885a5cb827be6fb1e12c24ac5b251d8e40f9919",
+      "source_path": "scripts/probe_container_seccomp_setresuid.sh",
+      "source_sha256": "8fd6f22a20a55a896cd6f01de4c36f8da5a339c7a6f004c313c00a822441b746"
+    },
+    "namespace-isolation": {
+      "path": "runtime/binfmt-isolation-h3bm2-20261004.json",
+      "sha256": "e50d5cc33dbbda28ccd732a645c2b604d71cc98000ee3b8a0afb7377be2752c9",
+      "source_path": "scripts/probe_binfmt_namespace_isolation.sh",
+      "source_sha256": "d490c9432fac6d07d24f1f05aa0b64561e931d2a28aa7838056352b31056be82"
+    },
+    "stack-guard": {
+      "path": "runtime/binfmt-stack-guard-h3bm2-20261004.json",
+      "sha256": "5bdd75ed0402f51d1039a7193f982546009b432cd57d3d2642603ea183d04c66",
+      "source_path": "scripts/probe_binfmt_stack_guard.sh",
+      "source_sha256": "b18425209d3cabd3cd578e7987f733d3d2e97896a02c1cf3ccd78f3c14c774c7"
+    },
+    "ordinary-filtered-mount": {
+      "path": "runtime/binfmt-filtered-mount-h3bm2-20261004.json",
+      "sha256": "68393ad75f06c79787ed67eada707bca475b00b7dee57b599680f9a8ef57e408",
+      "source_path": "scripts/probe_binfmt_filtered_mount.sh",
+      "source_sha256": "1826f8f433b33a4274434daf58fb1eb3b8eb265e6cee68a1321087081533922e"
+    },
+    "ordinary-crossarch": {
+      "path": "runtime/binfmt-crossarch-podman-filtered-h3bm2-20261004.json",
+      "sha256": "339f18ce4e72446e38e86fab3b08579b344300e133d3cd89abede7e9f9b886ed",
+      "source_path": "references/runtime-probes/binfmt-crossarch-attempt10-20261004/probe_binfmt_crossarch_podman.sh",
+      "source_sha256": "c2b6dcfbec79475075e44e4dcd9c7761ba295cec90ae3d4e2db638aa96e6fe15"
+    },
+    "installed-crossarch-helper": {
+      "path": "runtime/binfmt-crossarch-helper-extents-h3bm2-20261004.json",
+      "sha256": "b7dbbcf76c191215f56c1ddd1287369ccbd59afa3e6187a855f2565874df8d6f",
+      "source_path": "scripts/probe_binfmt_crossarch_podman.sh",
+      "source_sha256": "0bdf85b71c1c3435577dd4c66e1fe9bf6a7313b86b18f72cf8a2cfa184589058"
+    },
+    "native-cpu-cpuset": {
+      "path": "runtime/binfmt-native-cpu-regression-h3bm2-20261004.json",
+      "sha256": "08c5ea15c0d3581cbc9dd9384b6b9dbf238f4319de1a62bcf1a295df961b62e2",
+      "source_path": "scripts/probe_native_cpu_podman.sh",
+      "source_sha256": "761fd208cb19b0b0c4f3bb6148b1e5887820c1647a066a55c2fd7e5b41d8fb49"
+    },
+    "policy-crun": {
+      "path": "runtime/binfmt-policy-crun-regression-h3bm2-20261004.json",
+      "sha256": "c82e2b9ec9dc8ceb180a4d9e40ac7e59919cfa50774f5dd2e94a74a9a3c38f29",
+      "source_path": "scripts/probe_resource_policy_smoke.sh",
+      "source_sha256": "5d3a10bf12142c2a98b4404731da558c5edf34c5531ffcb7f63b8cf1cf7f4e43"
+    },
+    "policy-runc": {
+      "path": "runtime/binfmt-policy-runc-regression-h3bm2-20261004.json",
+      "sha256": "e81653940ee1204aefa10aeb5447fd92b01dfa6126b67d72a1e26432990097ef",
+      "source_path": "scripts/probe_resource_policy_smoke.sh",
+      "source_sha256": "5d3a10bf12142c2a98b4404731da558c5edf34c5531ffcb7f63b8cf1cf7f4e43"
+    },
+    "policy-cpu": {
+      "path": "runtime/binfmt-policy-cpu-regression-h3bm2-20261004.json",
+      "sha256": "2ce2db994ea9b314a2223aba53f64225e9dc49993c6c578aaa84049346cd345a",
+      "source_path": "scripts/probe_resource_policy_cpu_backend.sh",
+      "source_sha256": "4e25cc32825a2b62d5f6c91bd71072c1654bff2f443bf145f20417d3c4a936ba"
+    },
+    "policy-lifecycle-prepare": {
+      "path": "runtime/binfmt-policy-lifecycle-prepare-h3bm2-20261004.json",
+      "sha256": "e5aa2d4cfee8f4aa48e4a5b7f87587e4d9656009c1d0e4b2bdd071f909c1b5ae",
+      "source_path": "scripts/probe_resource_policy_lifecycle.sh",
+      "source_sha256": "452c5a838d8c6ea1dac3d88b6b9335c48bc0541a0dc507488bf79af021dc1edc"
+    },
+    "policy-lifecycle-cleanup": {
+      "path": "runtime/binfmt-policy-lifecycle-cleanup-h3bm2-20261004.json",
+      "sha256": "85ec10ff1e9d7e17fc13a36edd2c1298c26a74cca425ea0e3695ab6f6df82999",
+      "source_path": "scripts/probe_resource_policy_lifecycle.sh",
+      "source_sha256": "452c5a838d8c6ea1dac3d88b6b9335c48bc0541a0dc507488bf79af021dc1edc"
+    },
+    "helper-installation": {
+      "path": "runtime/binfmt-helper-extents-upgrade-h3bm2-20261004.json",
+      "sha256": "78bf0bfbdd852714b7b1c94b969d4e3ac9fb9ea43201cd9f11757bb3246b0e0d"
+    }
+  },
+  "guest_pid": 4532,
+  "normal_guest_seccomp": 2,
+  "selinux": "Enforcing",
+  "ksu_version": 33304,
+  "cpu_online": "0-7",
+  "cleanup_passed": true,
+  "fatal_kernel_log": false,
+  "scope": "Userns binfmt isolation and guarded lifetime; actual amd64/ARM64 OCI RUN/build; ordinary filtered guest foreground helper; affected native CPU/cpuset and policy lifecycle regression",
+  "limitations": [
+    "QEMU user-mode emulation",
+    "Foreground helper only; detached namespace lifetime needs a persistent service",
+    "VFS storage in user namespaces on this legacy overlayfs",
+    "Helper maps UIDs/GIDs 0..65535"
+  ],
+  "remaining_functional_stages": [
+    5,
+    6
+  ]
+}

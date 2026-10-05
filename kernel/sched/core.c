@@ -6880,8 +6880,24 @@ static void sched_change_group(struct task_struct *tsk, int type)
 	 * which is pointless here. Thus, we pass "true" to task_css_check()
 	 * to prevent lockdep warnings.
 	 */
+#ifdef CONFIG_RMX1931_DUAL_CPU
+	{
+		struct cgroup_subsys_state *css;
+
+		css = task_css_check(tsk, cpu_legacy_cgrp_id, true);
+		if (!css || !css->parent) {
+			struct cgroup_subsys_state *native;
+
+			native = task_css_check(tsk, cpu_cgrp_id, true);
+			if (native && native->parent)
+				css = native;
+		}
+		tg = container_of(css, struct task_group, css);
+	}
+#else
 	tg = container_of(task_css_check(tsk, cpu_cgrp_id, true),
 			  struct task_group, css);
+#endif
 	tg = autogroup_task_group(tsk, tg);
 	tsk->sched_task_group = tg;
 
@@ -7123,6 +7139,9 @@ static void cpu_cgroup_css_free(struct cgroup_subsys_state *css)
 	/*
 	 * Relies on the RCU grace period between css_released() and this.
 	 */
+#ifdef CONFIG_RMX1931_DUAL_CPU
+	free_percpu(tg->rmx_cputime);
+#endif
 	sched_free_group(tg);
 }
 
@@ -7408,8 +7427,15 @@ static int tg_cfs_schedulable_down(struct task_group *tg, void *data)
 		 */
 		if (quota == RUNTIME_INF)
 			quota = parent_quota;
-		else if (parent_quota != RUNTIME_INF && quota > parent_quota)
-			return -EINVAL;
+		else if (parent_quota != RUNTIME_INF && quota > parent_quota) {
+#ifdef CONFIG_RMX1931_DUAL_CPU
+			/* V2 limits compose; preserve V1 admission semantics. */
+			if (tg->rmx_cputime)
+				quota = parent_quota;
+			else
+#endif
+				return -EINVAL;
+		}
 	}
 	cfs_b->hierarchical_quota = quota;
 
@@ -7516,7 +7542,11 @@ static struct cftype cpu_files[] = {
 	{ }	/* Terminate */
 };
 
+#ifdef CONFIG_RMX1931_DUAL_CPU
+struct cgroup_subsys cpu_legacy_cgrp_subsys = {
+#else
 struct cgroup_subsys cpu_cgrp_subsys = {
+#endif
 	.css_alloc	= cpu_cgroup_css_alloc,
 	.css_online	= cpu_cgroup_css_online,
 	.css_released	= cpu_cgroup_css_released,
@@ -7526,7 +7556,14 @@ struct cgroup_subsys cpu_cgrp_subsys = {
 	.attach		= cpu_cgroup_attach,
 	.legacy_cftypes	= cpu_files,
 	.early_init	= true,
+#ifdef CONFIG_RMX1931_DUAL_CPU
+	.legacy_name	= "cpu",
+#endif
 };
+
+#ifdef CONFIG_RMX1931_DUAL_CPU
+#include "rmx_cpu_v2.h"
+#endif
 
 #endif	/* CONFIG_CGROUP_SCHED */
 

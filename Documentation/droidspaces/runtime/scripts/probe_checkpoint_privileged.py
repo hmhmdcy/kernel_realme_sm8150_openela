@@ -9,7 +9,7 @@ import re
 import shlex
 import subprocess
 import time
-from device_runtime import device, guest_info, read_root
+from device_runtime import device, guest_info, read_identity, read_root
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -20,6 +20,9 @@ def main():
     args = parser.parse_args()
     if not re.fullmatch('[a-zA-Z0-9_-]+', args.label):
         raise RuntimeError('Invalid evidence label')
+    path = ROOT / 'artifacts/droidspaces/runtime' / (args.label + '.json')
+    if path.exists():
+        raise RuntimeError('Do not overwrite previous probe evidence')
     adb = device()
     pid = guest_info(adb)['pid']
     guest_root = '/proc/' + str(pid) + '/root'
@@ -79,9 +82,10 @@ def main():
               'script_source_sha256': digest, 'namespaces': namespaces,
               'execution': 'explicit root entry; isolated guest namespaces; durable log and exit status',
               'guest_seccomp_disabled': False, 'scope': 'unfiltered single-process fixture only; privileged runner required'}
-    path = ROOT / 'artifacts/droidspaces/runtime' / (args.label + '.json')
-    if path.exists():
-        raise RuntimeError('Do not overwrite previous probe evidence')
+    result['end_identity'] = read_identity(adb)
+    if result['end_identity'] != {'kernel': kernel, 'boot_id': boot_id}:
+        result['returncode'] = 125
+        result['stderr'] += '\nPhone rebooted during the checkpoint probe.\n'
     path.write_text(json.dumps(result, indent=2) + '\n')
     print(json.dumps(result, indent=2))
     raise SystemExit(result['returncode'])

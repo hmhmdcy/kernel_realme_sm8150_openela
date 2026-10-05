@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from group_psi_boot import STAGE as PSI_STAGE, RECLAIM_STAGE as PSI_RECLAIM_STAGE, STAGES as PSI_STAGES, remove_pressure_disable, validate_header_change
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORY = ROOT / 'artifacts/droidspaces'
@@ -39,7 +40,7 @@ def run(script, *args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--variant', choices=['droidspaces', 'podman', 'podman2', 'lowrisk', 'ksunext',
-                        'ext-utilities', 'ext-bbr', 'ext-checkpoint', 'ext-network', 'ext-io'], default='droidspaces')
+                        'ext-utilities', 'ext-bbr', 'ext-checkpoint', 'ext-network', 'ext-io', 'ext-resources', 'ext-dualio', 'ext-harden1', 'ext-harden2-cpuset', 'ext-harden2-cpuset-fix', 'ext-harden2-cpuset-decay', 'ext-harden2-cpuset-stats', 'ext-harden3-binfmt', 'ext-harden3-binfmt-fix', 'ext-harden4-seccomp-notify', 'ext-harden5-binder-freeze', 'ext-harden5-binder-freeze-fix', 'ext-' + PSI_STAGE, 'ext-' + PSI_RECLAIM_STAGE], default='droidspaces')
     variant = parser.parse_args().variant
     for directory, revision in TOOLS.items():
         actual = subprocess.check_output(['git', '-C', str(directory), 'rev-parse', 'HEAD'], text=True).strip()
@@ -117,6 +118,11 @@ def main():
     if extension_audit and kernel_hash != extension_audit['kernel_sha256']:
         raise RuntimeError('Extension kernel changed after ABI audit')
     args[args.index('--kernel') + 1] = str(kernel)
+    if variant in {'ext-' + stage for stage in PSI_STAGES}:
+        if extension_audit['config_changes'] != {'CONFIG_CMDLINE': {'before': '"cgroup_disable=pressure"', 'after': '"psi=1"'}}:
+            raise RuntimeError('PSI candidate built-in command line has not been audited')
+        offset = args.index('--cmdline') + 1
+        args[offset] = remove_pressure_disable(args[offset])
     suffix = ('-LowRisk2-KSUNext3-Extensions-' + variant[4:] if variant.startswith('ext-') else
               {'droidspaces': '', 'podman': '-Podman1', 'podman2': '-Podman2', 'lowrisk': '-Podman2-LowRisk2', 'ksunext': '-Podman2-LowRisk2-KSUNext3'}[variant])
     candidate_dir = output / ('RMX1931CN-crDroid16-DroidSpaces-v6.6.0' + suffix)
@@ -144,7 +150,10 @@ def main():
     for start, end in ((8, 12), (576, 608)):
         old_header[start:end] = b'\0' * (end - start)
         new_header[start:end] = b'\0' * (end - start)
-    if old_header != new_header:
+    psi_change = None
+    if variant in {'ext-' + stage for stage in PSI_STAGES}:
+        psi_change = validate_header_change(original.read_bytes(), candidate.read_bytes())
+    elif old_header != new_header:
         raise RuntimeError('Non-kernel boot header fields changed')
     deployment_record = 'ksunext-boot-result.json' if variant == 'ksunext' else 'candidate-boot-result.json'
     report = {'status': 'Build-time validation; deployment evidence is in ' + deployment_record,
@@ -154,11 +163,13 @@ def main():
               'partition_bytes': record['capacity_bytes'], 'candidate_bytes': candidate.stat().st_size,
               'payload_bytes': payload_size, 'candidate_kernel_sha256': kernel_hash,
               'ramdisk_sha256': digest(unpack / 'ramdisk'),
-              'ramdisk_preserved': True, 'non_kernel_header_fields_preserved': True,
+              'ramdisk_preserved': True, 'non_kernel_header_fields_preserved': psi_change is None,
               'dtb_matches_original': True, 'avb_algorithm': 'NONE (same as original ROM boot)',
               'avb_hash_verified': True,
               'tools': {str(k.relative_to(ROOT)): v for k, v in TOOLS.items()},
-              'hardware_acceptance': 'pending', 'container_and_docker_acceptance': 'pending'}
+              'hardware_acceptance': 'not part of default acceptance', 'container_and_docker_acceptance': 'pending'}
+    if psi_change:
+        report.update(psi_cmdline_change=psi_change, non_kernel_header_fields_except_psi_cmdline_preserved=True)
     if extension_audit:
         report.update({'status': 'Build-time validation only; extension has not been deployed',
                        'cumulative_stages': extension_audit['cumulative_stages'],

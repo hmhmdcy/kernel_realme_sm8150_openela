@@ -1,0 +1,140 @@
+{
+  "observed_at": "2026-10-04T21:52:17.614437+00:00",
+  "passed": true,
+  "group_psi_memory_policy_accepted": true,
+  "stage": "android16-group-psi-reclaim-fix",
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-a16pf",
+  "boot_id": "b5d511b9-fe8d-44d0-94a9-957babb14d53",
+  "boot_sha256": "dfe18875661164e7cb64eba7942b856e80ffe20abb537aec815da4bf43995cdd",
+  "boot_verification_sha256": "ef0fba5181946b9a1ae556359bae60992487a8adade5c23fadacb22b88dae149",
+  "build_audit_sha256": "99cb5d281e04fa3261673584088d18e2aa2256b5b94ca9b816b1fa6e35a0bde6",
+  "packaging_sha256": "5bfbe36bc156390b3b3037a57b145ff568a44fb88a7ff6b8588a027f6ac52442",
+  "deployment_sha256": "8bddeb31af79461205f48c4ea725ca692cf83b992f61d7bcc070365176a63979",
+  "predecessor_binder_acceptance_sha256": "d7942418ddcb7443552c14b417d7c9e3e0dc5342813f108cb071da7a93c79aa0",
+  "evidence": {
+    "pressure-some": {
+      "path": "runtime/psi-policy-some-a16pf-20261005.json",
+      "sha256": "ab04a833146ab85897a7565414ce27a40a03a8a8e53f381ef8d3bfaba1ff0cf8",
+      "source_path": "scripts/probe_group_psi_policy.sh",
+      "source_sha256": "c86667509f739575c75a71e9d6162293ff9e7557750f136cc376e6cd7c12b9ad"
+    },
+    "pressure-full": {
+      "path": "runtime/psi-policy-full2-a16pf-20261005.json",
+      "sha256": "9804b222ce29876618354095321aa16f917a37379e189a5f51dfb3a419596d48",
+      "source_path": "scripts/probe_group_psi_policy.sh",
+      "source_sha256": "c86667509f739575c75a71e9d6162293ff9e7557750f136cc376e6cd7c12b9ad"
+    },
+    "monitor-lifecycle": {
+      "path": "runtime/psi-monitor-lifecycle-a16pf-20261005.json",
+      "sha256": "fec0b3a01b85e920b096d555558a038a123fb9118b48290a1f5a97a59daf5ed4",
+      "source_path": "scripts/probe_group_psi_monitor_lifecycle.sh",
+      "source_sha256": "d88bfd97d689c1714d09c5270b4571650e251329c73d1eed326c8a037fc2bbea"
+    },
+    "reclaim-migration": {
+      "path": "runtime/psi-reclaim-migration-a16pf-20261005.json",
+      "sha256": "8f78013d8e43968f1b51a8aee798e7ed4dc7e205e18f63e33f765f3f4dd2a7c2",
+      "source_path": "scripts/probe_group_psi_reclaim_migration.sh",
+      "source_sha256": "0f5a2b438940612ed87ab83f9d85cc4ff7ffbabf8d028530d3aea6a52ac051bf"
+    },
+    "persistence-prepare": {
+      "path": "runtime/psi-persistence-prepare-a16pf-20261005.json",
+      "sha256": "ed190bcaa66a46c51f9ed31f900531bc5aba19302acfcd5cdc6aa9d304cd026d",
+      "source_path": "scripts/probe_group_psi_persistence.sh",
+      "source_sha256": "6cee647d3f0764132843d31bc9546ee1d538c72bca7714a8929d7910099be560"
+    },
+    "persistence-resume": {
+      "path": "runtime/psi-persistence-resume-a16pf-20261005.json",
+      "sha256": "e5fab4460f825b81ce13ed616df3dcfe04dfbfc18618e3a54f490152af5252f8",
+      "source_path": "scripts/probe_group_psi_persistence.sh",
+      "source_sha256": "6cee647d3f0764132843d31bc9546ee1d538c72bca7714a8929d7910099be560"
+    },
+    "restart-before": {
+      "path": "runtime/psi-restart-before-a16pf-20261005.json",
+      "sha256": "2c201b4a69b6e8b0c1f0c0e84b217d46e93babad43d37495efd284d9770627fa",
+      "source_path": "scripts/record_group_psi_restart.py",
+      "source_sha256": "4c992889a6864b7ecdf350b77422343df3a65616ec8ab546ed2d126312906d0e"
+    },
+    "restart-after": {
+      "path": "runtime/psi-restart-after-a16pf-20261005.json",
+      "sha256": "57e5172dae39260a4d9faaf81f07c4a0d496496432c8e8fe14b77bc0facf3790",
+      "source_path": "scripts/record_group_psi_restart.py",
+      "source_sha256": "4c992889a6864b7ecdf350b77422343df3a65616ec8ab546ed2d126312906d0e"
+    },
+    "filter": {
+      "path": "runtime/psi-filter-a16pf-20261005.json",
+      "sha256": "8957fa903c1f1994a45f7773b609bebf805ccdfe40f7f850c3b297e2d085a7c4",
+      "source_path": "scripts/probe_container_seccomp_setresuid.sh",
+      "source_sha256": "8fd6f22a20a55a896cd6f01de4c36f8da5a339c7a6f004c313c00a822441b746"
+    },
+    "native-cpu": {
+      "path": "runtime/psi-native-cpu-a16pf-20261005.json",
+      "sha256": "8e2e44bf4b934c68a859910eae75035faf0eb1515164ef7879ff5b322895d89c",
+      "source_path": "scripts/probe_native_cpu_podman.sh",
+      "source_sha256": "761fd208cb19b0b0c4f3bb6148b1e5887820c1647a066a55c2fd7e5b41d8fb49"
+    },
+    "legacy-policy-crun": {
+      "path": "runtime/psi-policy-crun-a16pf-20261005.json",
+      "sha256": "8f2d08ae8e5f115f6a865bb0542721aca52773c664b6156ad8f74fb1e4317e95",
+      "source_path": "scripts/probe_resource_policy_smoke.sh",
+      "source_sha256": "5d3a10bf12142c2a98b4404731da558c5edf34c5531ffcb7f63b8cf1cf7f4e43"
+    },
+    "legacy-policy-runc": {
+      "path": "runtime/psi-policy-runc-a16pf-20261005.json",
+      "sha256": "2c39687cca8a4df6e25bd6369a8ced9ac099c2dd4d8e8d440901a2cf560d1940",
+      "source_path": "scripts/probe_resource_policy_smoke.sh",
+      "source_sha256": "5d3a10bf12142c2a98b4404731da558c5edf34c5531ffcb7f63b8cf1cf7f4e43"
+    },
+    "android16-binder-public-api": {
+      "path": "runtime/psi-binder-public-api-a16pf-20261005.json",
+      "sha256": "80bcdadb2ce382cd06286e6a13e44992e5317577cc90820638514959ea7518b7"
+    },
+    "host-before": {
+      "path": "runtime/psi-host-before-a16pf-20261005.json",
+      "sha256": "cae0779bc0dfc0bba1d164cabbd6aca1a941b57eef42f69b49fa32eeabb7c070",
+      "source_path": "scripts/probe_group_psi_host_health.py",
+      "source_sha256": "8f2d02fb5622c2407c998b8eaece2ecf9cb59d40913151d88fe525bad4d05507"
+    },
+    "host-final": {
+      "path": "runtime/psi-host-final-a16pf-20261005.json",
+      "sha256": "02d1a6147401ba984bb7bf999d7d393329a0903b49f0b551fed5ee7c366d6c83",
+      "source_path": "scripts/probe_group_psi_host_health.py",
+      "source_sha256": "8f2d02fb5622c2407c998b8eaece2ecf9cb59d40913151d88fe525bad4d05507"
+    },
+    "offline": {
+      "path": "group-psi-offline-checks.json",
+      "sha256": "74e5e37fd11e3c3b2fdd364ab2564760fe1b92615fb1a5977311338095fabb7d"
+    }
+  },
+  "guest_pid": 20820,
+  "installed_sources": {
+    "rmx1931_resource_policy.py": "79beb83e0c505d477a0db4c89df9a3e1b9f38707cc8c5ca24d7aa7c30954013c",
+    "oci_resource_entry.py": "338415df58e5167efb17c5fc3319b7d6ecb6890570682410431f84ecf1b19228",
+    "rmx1931_pressure.py": "51fd68471223a125bc7321bbd703f7a38293618ad2fb582104c733714f88e7ba"
+  },
+  "new_kernel_source_code": true,
+  "module_export_crcs_preserved": false,
+  "scope": "Enable existing cgroup PSI; pre-execution optional memory.high, some/full real bounded workloads, separate ancestor notifications and idle neighbors; watcher target binding, real guest restart persistence and affected Android/container regression. Reclaiming runnable tasks contribute to full state; owned descendant migrations overlap actual PF_MEMSTALL observations without underflow.",
+  "limitations": [
+    "No automatic process killing or changes to LMKD thresholds.",
+    "No performance, battery or OOM-resilience improvement claim.",
+    "PSI uses per-group non-idle CPU weighting; parent total need not exceed child total.",
+    "Export CRC identity does not establish external module binary compatibility."
+  ],
+  "complete_android16_desktop_status": "paused by user; not deployed or accepted",
+  "remaining_current_scope": [
+    "Current-ROM eBPF interface requirements"
+  ],
+  "upstream_commit": "cb0e52b7748737b2cf6481fdd9b920ce7e1ebbdf",
+  "psi_reclaim_full_fix_accepted": true,
+  "abi_review_sha256": "ed67568cc91707657ae467cd570edd725d91335bec6ac8e4ee9db60179adea28",
+  "changed_existing_export_crcs": 3916,
+  "external_module_compatibility": false,
+  "external_modules_absent": true,
+  "repaired_source_sha256": {
+    "include/linux/psi_types.h": "423d38efdc0fc6d217d7d4e87d78b53dec2de5d708eadffc21bf0e61d603b7ea",
+    "kernel/sched/psi.c": "6e0b077a8f2478ccffd31bbba3e78627c28b4c1bba4ff9ca6c2d15fc96155636",
+    "kernel/sched/stats.h": "5249cf0514fd73faf17454e159ab08b33bb04710eae3665771eb0ce12df2a63f"
+  },
+  "iteration_baseline_runtime_accepted": false,
+  "iteration_baseline_failure_sha256": "8205361508da3b3b03ef6c763c081bd556914006d646d906e89040e11acc94ce"
+}

@@ -1,0 +1,134 @@
+{
+  "accepted_at": "2026-10-03T19:09:06.771539+00:00",
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-harden1",
+  "boot_id": "53691308-0284-4dd0-b313-2ac387166080",
+  "passed": true,
+  "stage": "harden1",
+  "boot_sha256": "774963cfead434af43434a055974f4030e2a7bae446f3074314cc2da1f17c4d5",
+  "running_config_matches": true,
+  "selinux": "Enforcing",
+  "ordinary_guest_seccomp": 2,
+  "cumulative_probes_passed": 20,
+  "official_capabilities_passed": 27,
+  "lifecycle_cases": [
+    {
+      "name": "default_and_invalid_values",
+      "passed": true
+    },
+    {
+      "name": "oom_group_disabled_control",
+      "passed": true
+    },
+    {
+      "name": "oom_group_and_protected_exception",
+      "passed": true
+    },
+    {
+      "name": "parent_oom_group_reaches_descendants_only",
+      "passed": true
+    },
+    {
+      "name": "leaf_oom_does_not_kill_ancestor_or_sibling",
+      "passed": true
+    },
+    {
+      "name": "recursive_kill_and_sibling_isolation",
+      "passed": true
+    },
+    {
+      "name": "kill_frozen_group",
+      "passed": true
+    },
+    {
+      "name": "threaded_kill_refused",
+      "passed": true
+    },
+    {
+      "name": "bounded_fork_race",
+      "passed": true,
+      "iterations": 12,
+      "pids_limit": 32
+    },
+    {
+      "name": "rootful_actual_container_oom_group_0",
+      "passed": true,
+      "exit_code": 0,
+      "payload_seccomp": 2,
+      "launch": "ordinary guest systemd service"
+    },
+    {
+      "name": "rootful_actual_container_oom_group_1",
+      "passed": true,
+      "exit_code": 137,
+      "payload_seccomp": 2,
+      "launch": "ordinary guest systemd service"
+    },
+    {
+      "name": "rootless_actual_container_oom_group_0",
+      "passed": true,
+      "exit_code": 0,
+      "payload_seccomp": 2,
+      "launch": "ordinary guest systemd service"
+    },
+    {
+      "name": "rootless_actual_container_oom_group_1",
+      "passed": true,
+      "exit_code": 137,
+      "payload_seccomp": 2,
+      "launch": "ordinary guest systemd service"
+    }
+  ],
+  "bounded_fork_race_iterations": 12,
+  "cpu_modes_passed": [
+    "rootful",
+    "rootless"
+  ],
+  "native_io_modes_passed": [
+    "guest",
+    "rootful",
+    "rootless"
+  ],
+  "io_hierarchy_writeback_passed": true,
+  "global_root_cgroup_kill_absent": true,
+  "kernel_fatal_errors_observed": [],
+  "final_dmesg_sha256": "df8867cc2c234bbd6ff658c04f957c20b43fa7de326eeda286fe24f705bce458",
+  "default_wifi_sensor_tests_requested": false,
+  "evidence": {
+    "cumulative": {
+      "path": "artifacts/droidspaces/extensions-harden1-live20261004-acceptance.json",
+      "sha256": "9d13a860e28bb57d446f9106038ac04819cfb95e23060435339c6c6e134c63ec"
+    },
+    "lifecycle": {
+      "path": "artifacts/droidspaces/runtime/lifecycle-harden1-20261004-retry1.json",
+      "sha256": "6178a7ccb7679906e657c4b01f26b163e8a61947ff4a6a545bf4731a19e5760b"
+    },
+    "cpu": {
+      "path": "artifacts/droidspaces/runtime/container-cpu-harden1-20261004.json",
+      "sha256": "9b500df8694dc8bc5a60cb01913040a04a5d9c2c04b95b7438da039d22e0809e"
+    },
+    "io": {
+      "path": "artifacts/droidspaces/runtime/native-io-harden1-20261004.json",
+      "sha256": "fa4e400cec006319740dc042d6d5421633c22156e03b6dbb643ee7e26e8bf4c1"
+    },
+    "writeback": {
+      "path": "artifacts/droidspaces/runtime/io-writeback-harden1-20261004.json",
+      "sha256": "08436cc257e651e542e4a4cfbb585d5f013050191436a057ff59a2779fc53852"
+    },
+    "cleanup": {
+      "path": "artifacts/droidspaces/runtime/harden1-final-cleanup-20261004.json",
+      "sha256": "56283e93e2fbafdf47b3daa8e435cafedd2fe18b41445933d621590102d8041e"
+    }
+  },
+  "changed_export_crcs_vs_dualio": 8220,
+  "scope": "Stage 1 lifecycle backports and inherited CPU/IO/container regression",
+  "remaining_goal_stages": [
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "virtualization": "EL1 boot observed; KVM/AVF requires separate platform research",
+  "android16_container_target": "Complete desktop and actual application execution",
+  "publication_performed": false
+}

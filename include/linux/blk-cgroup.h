@@ -44,6 +44,11 @@ struct blkcg_gq;
 struct blkcg {
 	struct cgroup_subsys_state	css;
 	spinlock_t			lock;
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+	/* Set before policy allocation: css.cgroup is not initialized yet. */
+	bool				v2_controller;
+	bool				v2_delegate;
+#endif
 
 	struct radix_tree_root		blkg_tree;
 	struct blkcg_gq	__rcu		*blkg_hint;
@@ -224,9 +229,36 @@ static inline struct blkcg *css_to_blkcg(struct cgroup_subsys_state *css)
 	return css ? container_of(css, struct blkcg, css) : NULL;
 }
 
+static inline bool blkcg_on_dfl(struct blkcg *blkcg)
+{
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+	return blkcg->v2_controller;
+#else
+	return cgroup_subsys_on_dfl(io_cgrp_subsys);
+#endif
+}
+
+/* The caller holds RCU or a css reference, protecting the ancestor chain. */
+static inline bool blkcg_v2_selected(struct cgroup_subsys_state *css)
+{
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+	for (; css; css = css->parent)
+		if (READ_ONCE(css_to_blkcg(css)->v2_delegate))
+			return true;
+	return false;
+#else
+	return true;
+#endif
+}
+
 static inline struct blkcg *task_blkcg(struct task_struct *tsk)
 {
-	return css_to_blkcg(task_css(tsk, io_cgrp_id));
+	struct cgroup_subsys_state *css = task_css(tsk, io_cgrp_id);
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+	if (!blkcg_v2_selected(css))
+		css = task_css(tsk, blkio_cgrp_id);
+#endif
+	return css_to_blkcg(css);
 }
 
 static inline struct blkcg *bio_blkcg(struct bio *bio)
@@ -239,7 +271,39 @@ static inline struct blkcg *bio_blkcg(struct bio *bio)
 static inline struct cgroup_subsys_state *
 task_get_blkcg_css(struct task_struct *task)
 {
-	return task_get_css(task, io_cgrp_id);
+	struct cgroup_subsys_state *css = task_get_css(task, io_cgrp_id);
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+	if (!blkcg_v2_selected(css)) {
+		css_put(css);
+		css = task_get_css(task, blkio_cgrp_id);
+	}
+#endif
+	return css;
+}
+
+/* Keep Android buffered writeback on its original legacy root. */
+static inline struct cgroup_subsys_state *blkcg_get_writeback_css(struct cgroup *cgrp)
+{
+	struct cgroup_subsys_state *css = cgroup_get_e_css(cgrp, &io_cgrp_subsys);
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+	if (!blkcg_v2_selected(css)) {
+		css_put(css);
+		css = blkcg_root_css;
+		css_get(css);
+	}
+#endif
+	return css;
+}
+
+/* css IDs are per subsystem; partition the congestion key space. */
+static inline int blkcg_congested_id(struct blkcg *blkcg)
+{
+	unsigned int id = blkcg->css.id;
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+	if (blkcg->v2_controller)
+		id |= 1U << 31;
+#endif
+	return (int)id;
 }
 
 /**

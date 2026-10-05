@@ -9,7 +9,7 @@ import shlex
 import subprocess
 import time
 import uuid
-from device_runtime import device, guest_info, read_root, DS, NAME
+from device_runtime import device, guest_info, read_identity, read_root, DS, NAME
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -20,6 +20,9 @@ def main():
     args = parser.parse_args()
     if not re.fullmatch('[a-zA-Z0-9_-]+', args.label):
         raise RuntimeError('Invalid label')
+    record = ROOT / 'artifacts/droidspaces/runtime' / (args.label + '.json')
+    if record.exists():
+        raise RuntimeError('Do not overwrite I/O evidence; use a fresh label')
     adb = device()
     info = guest_info(adb)
     pid = info['pid']
@@ -38,7 +41,6 @@ def main():
     def guest(command):
         return shlex.join([DS, '--name=' + NAME, 'run', '/bin/sh', '-c', command])
 
-    record = ROOT / 'artifacts/droidspaces/runtime' / (args.label + '.json')
     record.parent.mkdir(parents=True, exist_ok=True)
     group = None
     fixture = None
@@ -104,6 +106,12 @@ def main():
             except Exception as error:
                 cleanup_errors.append(str(error))
         report['cleanup_errors'] = cleanup_errors
+        try:
+            report['end_identity'] = read_identity(adb)
+            if report['end_identity'] != {'kernel': report['kernel'], 'boot_id': report['boot_id']}:
+                cleanup_errors.append('Phone rebooted during the I/O probe')
+        except RuntimeError as error:
+            cleanup_errors.append('End identity is unverified: ' + str(error))
         if cleanup_errors:
             report['status'] = 'failed'
         record.write_text(json.dumps(report, indent=2) + '\n')

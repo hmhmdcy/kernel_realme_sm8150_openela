@@ -1,0 +1,97 @@
+{
+  "observed_at": "2026-10-04T15:47:43.699199+00:00",
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-h4sn",
+  "boot_id": "efd5665c-66bf-4e28-9789-5a2489f3d487",
+  "stage": "harden4-seccomp-notify",
+  "passed": true,
+  "complete_stage_5_accepted": true,
+  "boot_sha256": "3722c9c2274f762f8364e186d60671e0d30ddbe998a35583464149476e81e27d",
+  "build_audit_sha256": "1e9afc1b76d0a14ea3f63c13e15e16c4f438bb914d81a99401a3480352543062",
+  "boot_verification_sha256": "fa1f6a3d86f04a2370b32eb7880af1ca60951c09bba07302cb37017d19e2360f",
+  "predecessor_stage4_acceptance_sha256": "f32598934607a41a10907955a41bc9cce71fc6a71fd7f2b152e422ef2c4481fa",
+  "evidence": {
+    "upstream-selftests": {
+      "path": "runtime/seccomp-notify-upstream-h4sn-20261004.json",
+      "sha256": "fe4593a0c43a9d73c93931f07184ef2b6e66c90b5b91b2b3c0dde140c58a0fbb",
+      "source_path": "scripts/probe_seccomp_notify_selftests.sh",
+      "source_sha256": "abc87723c3b36ca30aeb0a2fc40c1e8d67eaa3fce5c487fc61acabdc4f008896"
+    },
+    "crun-broker": {
+      "path": "runtime/seccomp-notify-crun3-h4sn-20261004.json",
+      "sha256": "4d017c46a543cfe00c01156d44ca06a3f26543f1b5349aa1d17275221c9c24b2",
+      "source_path": "references/runtime-probes/seccomp-notify-crun-attempt3-20261004/probe_seccomp_notify_crun.sh",
+      "source_sha256": "9a13a887079ad343541dd37b160fac01233b8ba482d2806d9bc3c1ace1786af1"
+    },
+    "installed-broker-target-binding": {
+      "path": "runtime/seccomp-notify-target-binding-h4sn-20261004.json",
+      "sha256": "b16fde07eaf00171b3bc9417c83eecb0daf3dfe04ae4901e41fdd013f2116866",
+      "source_path": "scripts/probe_seccomp_notify_crun.sh",
+      "source_sha256": "b40ad0e48ca40a29bb31787e319b1e110c2c1b5fee3e8b21cefbbb798b37cd95"
+    },
+    "filter-preservation": {
+      "path": "runtime/seccomp-notify-filter-preservation-h4sn-20261004.json",
+      "sha256": "696e798689342c8422682fd5f5d472c2547f4c1817089ccc9e08fa93d32fa9d4",
+      "source_path": "scripts/probe_container_seccomp_setresuid.sh",
+      "source_sha256": "8fd6f22a20a55a896cd6f01de4c36f8da5a339c7a6f004c313c00a822441b746"
+    },
+    "native-cpu-cpuset": {
+      "path": "runtime/seccomp-notify-native-cpu-h4sn-20261004.json",
+      "sha256": "b92374dd62cf66e99e587510852065ad415e50600d8f2796a02dab1ea781b0e9",
+      "source_path": "scripts/probe_native_cpu_podman.sh",
+      "source_sha256": "761fd208cb19b0b0c4f3bb6148b1e5887820c1647a066a55c2fd7e5b41d8fb49"
+    },
+    "crossarch": {
+      "path": "runtime/seccomp-notify-crossarch-pinned-h4sn-20261004.json",
+      "sha256": "6dee806a2b5eae51634bf88e339eff25418241b919dd5e581b58b76736d8c363",
+      "source_path": "scripts/probe_binfmt_crossarch_podman_pinned.sh",
+      "source_sha256": "7c58ead68701a120269fb52f23e5a4185d21c1611cf7e6a5d35d6ddad4555cd4"
+    },
+    "policy-crun": {
+      "path": "runtime/seccomp-notify-policy-crun-h4sn-20261004.json",
+      "sha256": "d4169bbfa4922e5701aa4b0cd1da0b53363d1b51e5a09e54f4a7c9169ed2109d",
+      "source_path": "scripts/probe_resource_policy_smoke.sh",
+      "source_sha256": "5d3a10bf12142c2a98b4404731da558c5edf34c5531ffcb7f63b8cf1cf7f4e43"
+    },
+    "policy-runc": {
+      "path": "runtime/seccomp-notify-policy-runc-h4sn-20261004.json",
+      "sha256": "99bd19a298cc32a1269f787d0c9a9f8534f6e6a9f9fbae0f693bc7a621a36731",
+      "source_path": "scripts/probe_resource_policy_smoke.sh",
+      "source_sha256": "5d3a10bf12142c2a98b4404731da558c5edf34c5531ffcb7f63b8cf1cf7f4e43"
+    },
+    "policy-cpu": {
+      "path": "runtime/seccomp-notify-policy-cpu-h4sn-20261004.json",
+      "sha256": "301a62ee8de8f03d22263639cf563f06b7567da55448cf299f88d7c5b2a033da",
+      "source_path": "scripts/probe_resource_policy_cpu_backend.sh",
+      "source_sha256": "4e25cc32825a2b62d5f6c91bd71072c1654bff2f443bf145f20417d3c4a936ba"
+    },
+    "broker-installation": {
+      "path": "runtime/seccomp-notify-broker-install-h4sn-20261004.json",
+      "sha256": "bc565a719076a7d53ab16046b350a0feec3c492c184f37df77877e54228694ca"
+    }
+  },
+  "upstream_tests": {
+    "passed": 25,
+    "failed": 0,
+    "skipped": 0
+  },
+  "actual_oci_modes": [
+    "rootful",
+    "rootless"
+  ],
+  "guest_pid": 4520,
+  "normal_guest_seccomp": 2,
+  "selinux": "Enforcing",
+  "ksu_version": 33304,
+  "cpu_online": "0-7",
+  "cleanup_passed": true,
+  "fatal_kernel_log": false,
+  "scope": "Seccomp notification core and FD/lifetime ABI; actual filtered crun broker and target binding; affected Podman/crossarch/resources",
+  "limitations": [
+    "ARM64 single-process foreground example broker; four pointer-free demonstration syscalls",
+    "Explicit OCI notify profile only; ordinary seccomp profile retained",
+    "ADDFD_SEND and WAIT_KILLABLE_RECV not included"
+  ],
+  "remaining_functional_stages": [
+    6
+  ]
+}

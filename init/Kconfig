@@ -794,6 +794,18 @@ config MEMCG_SWAP_ENABLED
 	  select this option (if, for some reason, they need to disable it
 	  then swapaccount=0 does the trick).
 
+config RMX1931_DUAL_BLKIO
+	bool "RMX1931 opt-in V2 IO beside Android V1 blkio"
+	depends on BLK_CGROUP && BLK_DEV_THROTTLING
+	depends on !BLK_DEV_THROTTLING_LOW
+	default n
+	help
+	  Personal RMX1931 fork. Preserve Android legacy blkio and its queue
+	  root, while exposing an independent V2 io controller. IO remains
+	  on legacy blkio unless io.v2_delegate is explicitly set on a V2
+	  ancestor. This one-way selection lasts until that group is removed.
+	  io.low across the two controllers is unsupported.
+
 config BLK_CGROUP
 	bool "IO controller"
 	depends on BLOCK
@@ -829,7 +841,18 @@ config CGROUP_WRITEBACK
 	depends on MEMCG && BLK_CGROUP
 	default y
 
-menuconfig CGROUP_SCHED
+menuconfig RMX1931_DUAL_CPU
+	bool "RMX1931 native V2 CPU beside Android V1 CPU"
+	depends on ARM64 && CGROUP_SCHED && FAIR_GROUP_SCHED && CFS_BANDWIDTH
+	depends on CGROUP_CPUACCT && !RT_GROUP_SCHED && !SCHED_AUTOGROUP
+	default n
+	help
+	  Personal device fork. Android keeps its legacy cpu hierarchy.
+	  Enabling cpu on a non-root V2 group selects an independent CFS
+	  task group for that workload, with native max, weight and stat.
+	  Its V1 CPU limits are not combined with its selected V2 limits.
+
+config CGROUP_SCHED
 	bool "CPU controller"
 	default n
 	help
@@ -846,7 +869,6 @@ config FAIR_GROUP_SCHED
 config CFS_BANDWIDTH
 	bool "CPU bandwidth provisioning for FAIR_GROUP_SCHED"
 	depends on FAIR_GROUP_SCHED
-	depends on !SCHED_WALT
 	default n
 	help
 	  This option allows users to define CPU bandwidth rates (limits) for
@@ -920,6 +942,16 @@ config CGROUP_HUGETLB
 	  beforehand how much HugeTLB pages it would require for its use. The
 	  control group is tracked in the third page lru pointer. This means
 	  that we cannot use the controller with huge page less than 3 pages.
+
+config RMX1931_DUAL_CPUSET
+	bool "RMX1931 native V2 cpuset beside Android V1 cpuset"
+	depends on ARM64 && CPUSETS && !NUMA
+	default n
+	help
+	  Transitional controller for this non-NUMA device. Android keeps
+	  its legacy cpuset and scheduler domains; V2 workloads use native
+	  requested/effective CPU and memory-node masks. It does not expose
+	  V2 partition/exclusive controls or replace WALT performance hints.
 
 config CPUSETS
 	bool "Cpuset controller"

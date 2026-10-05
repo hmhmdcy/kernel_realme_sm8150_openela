@@ -43,6 +43,10 @@ enum ucount_type {
 	UCOUNT_COUNTS,
 };
 
+#if IS_ENABLED(CONFIG_BINFMT_MISC)
+struct binfmt_misc;
+#endif
+
 struct user_namespace {
 	struct uid_gid_map	uid_map;
 	struct uid_gid_map	gid_map;
@@ -67,6 +71,9 @@ struct user_namespace {
 #endif
 	struct ucounts		*ucounts;
 	int ucount_max[UCOUNT_COUNTS];
+#if IS_ENABLED(CONFIG_BINFMT_MISC)
+	struct binfmt_misc *binfmt_misc;
+#endif
 } __randomize_layout;
 
 struct ucounts {

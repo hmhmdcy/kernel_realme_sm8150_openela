@@ -44,6 +44,19 @@ static DEFINE_SPINLOCK(release_agent_path_lock);
 
 bool cgroup1_ssid_disabled(int ssid)
 {
+/* Never let V1 "all" or an explicit private name steal V2 trees. */
+#ifdef CONFIG_RMX1931_DUAL_CPU
+	if (ssid == cpu_cgrp_id)
+		return true;
+#endif
+#ifdef CONFIG_RMX1931_DUAL_CPUSET
+	if (ssid == cpuset_cgrp_id)
+		return true;
+#endif
+#ifdef CONFIG_RMX1931_DUAL_BLKIO
+	if (ssid == io_cgrp_id)
+		return true;
+#endif
 	return cgroup_no_v1_mask & (1 << ssid);
 }
 
@@ -928,7 +941,11 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
 	int i;
 
 #ifdef CONFIG_CPUSETS
+#ifdef CONFIG_RMX1931_DUAL_CPUSET
+	mask = ~((u16)1 << cpuset_legacy_cgrp_id);
+#else
 	mask = ~((u16)1 << cpuset_cgrp_id);
+#endif
 #endif
 
 	memset(opts, 0, sizeof(*opts));

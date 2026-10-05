@@ -1159,6 +1159,8 @@ struct task_struct {
 #ifdef CONFIG_CGROUPS
 	/* Control Group info protected by css_set_lock: */
 	struct css_set __rcu		*cgroups;
+	/* Old fork API has no kernel_clone_args; cache before siglock. */
+	unsigned int			cgroup_kill_seq;
 	/* cg_list protected by css_set_lock and tsk->alloc_lock: */
 	struct list_head		cg_list;
 #endif

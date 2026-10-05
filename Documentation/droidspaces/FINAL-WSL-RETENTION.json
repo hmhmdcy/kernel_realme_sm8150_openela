@@ -1,0 +1,8 @@
+{
+  "actual_latest_source_files_verified": 62,
+  "actual_latest_output_files_verified": 4,
+  "toolchain_retained": true,
+  "source": "/var/tmp/rmx1931-ksunext-cd739c788023/src-ext-android16-group-psi-reclaim-fix",
+  "output": "/var/tmp/rmx1931-ksunext-cd739c788023/out-ext-android16-group-psi-reclaim-fix",
+  "workspace_audit_sha256": "99cb5d281e04fa3261673584088d18e2aa2256b5b94ca9b816b1fa6e35a0bde6"
+}

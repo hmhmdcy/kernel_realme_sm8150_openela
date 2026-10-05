@@ -1,0 +1,10 @@
+{
+  "observed_at": "2026-10-04T22:24:51.886449+00:00",
+  "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-a16pf",
+  "boot_id": "b5d511b9-fe8d-44d0-94a9-957babb14d53",
+  "guest_pid": 20820,
+  "policy_profiles_empty": true,
+  "active_test_containers_absent": true,
+  "external_modules_absent": true,
+  "passed": true
+}

@@ -1,0 +1,491 @@
+--- a/include/linux/cgroup-defs.h
++++ b/include/linux/cgroup-defs.h
+@@ -343,6 +343,9 @@
+ 	int nr_populated_threaded_children;
+ 
+ 	int nr_threaded_children;	/* # of live threaded child cgroups */
++
++	/* cgroup.kill sequence, protected by css_set_lock. */
++	unsigned int kill_seq;
+ 
+ 	struct kernfs_node *kn;		/* cgroup kernfs entry */
+ 	struct cgroup_file procs_file;	/* handle for "cgroup.procs" */
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1159,6 +1159,8 @@
+ #ifdef CONFIG_CGROUPS
+ 	/* Control Group info protected by css_set_lock: */
+ 	struct css_set __rcu		*cgroups;
++	/* Old fork API has no kernel_clone_args; cache before siglock. */
++	unsigned int			cgroup_kill_seq;
+ 	/* cg_list protected by css_set_lock and tsk->alloc_lock: */
+ 	struct list_head		cg_list;
+ #endif
+--- a/include/linux/memcontrol.h
++++ b/include/linux/memcontrol.h
+@@ -203,6 +203,9 @@
+ 	 */
+ 	bool use_hierarchy;
+ 
++	/* V2 workload integrity policy; disabled by default. */
++	bool oom_group;
++
+ 	/* protected by memcg_oom_lock */
+ 	bool		oom_lock;
+ 	int		under_oom;
+@@ -498,6 +501,9 @@
+ }
+ 
+ bool mem_cgroup_oom_synchronize(bool wait);
++struct mem_cgroup *mem_cgroup_get_oom_group(struct task_struct *victim,
++					    struct mem_cgroup *oom_domain);
++void mem_cgroup_print_oom_group(struct mem_cgroup *memcg);
+ 
+ #ifdef CONFIG_MEMCG_SWAP
+ extern int do_swap_account;
+@@ -931,6 +937,16 @@
+ 	return false;
+ }
+ 
++static inline struct mem_cgroup *mem_cgroup_get_oom_group(
++	struct task_struct *victim, struct mem_cgroup *oom_domain)
++{
++	return NULL;
++}
++
++static inline void mem_cgroup_print_oom_group(struct mem_cgroup *memcg)
++{
++}
++
+ static inline unsigned long memcg_page_state(struct mem_cgroup *memcg,
+ 					     int idx)
+ {
+--- a/kernel/cgroup/cgroup.c
++++ b/kernel/cgroup/cgroup.c
+@@ -3604,6 +3604,77 @@
+ 	cgroup_kn_unlock(of->kn);
+ 
+ 	return nbytes;
++}
++
++static void __cgroup_kill(struct cgroup *cgrp)
++{
++	struct css_task_iter it;
++	struct task_struct *task;
++
++	lockdep_assert_held(&cgroup_mutex);
++
++	spin_lock_irq(&css_set_lock);
++	cgrp->kill_seq++;
++	spin_unlock_irq(&css_set_lock);
++
++	css_task_iter_start(&cgrp->self, CSS_TASK_ITER_PROCS | CSS_TASK_ITER_THREADED, &it);
++	while ((task = css_task_iter_next(&it))) {
++		/* Ignore kernel threads here. */
++		if (task->flags & PF_KTHREAD)
++			continue;
++
++		/* Skip tasks that are already dying. */
++		if (__fatal_signal_pending(task))
++			continue;
++
++		send_sig(SIGKILL, task, 0);
++	}
++	css_task_iter_end(&it);
++
++}
++
++static void cgroup_kill(struct cgroup *cgrp)
++{
++	struct cgroup_subsys_state *css;
++	struct cgroup *dsct;
++
++	lockdep_assert_held(&cgroup_mutex);
++
++	cgroup_for_each_live_descendant_pre(dsct, css, cgrp)
++		__cgroup_kill(dsct);
++}
++
++static ssize_t cgroup_kill_write(struct kernfs_open_file *of, char *buf,
++				 size_t nbytes, loff_t off)
++{
++	ssize_t ret = 0;
++	int kill;
++	struct cgroup *cgrp;
++
++	ret = kstrtoint(strstrip(buf), 0, &kill);
++	if (ret)
++		return ret;
++
++	if (kill != 1)
++		return -ERANGE;
++
++	cgrp = cgroup_kn_lock_live(of->kn, false);
++	if (!cgrp)
++		return -ENOENT;
++
++	/*
++	 * Killing is a process directed operation, i.e. the whole thread-group
++	 * is taken down so act like we do for cgroup.procs and only make this
++	 * writable in non-threaded cgroups.
++	 */
++	if (cgroup_is_threaded(cgrp))
++		ret = -EOPNOTSUPP;
++	else
++		cgroup_kill(cgrp);
++
++	cgroup_kn_unlock(of->kn);
++
++	return ret ?: nbytes;
+ }
+ 
+ static int cgroup_file_open(struct kernfs_open_file *of)
+@@ -4833,6 +4904,11 @@
+ 		.seq_show = cgroup_freeze_show,
+ 		.write = cgroup_freeze_write,
+ 	},
++	{
++		.name = "cgroup.kill",
++		.flags = CFTYPE_NOT_ON_ROOT,
++		.write = cgroup_kill_write,
++	},
+ #ifdef CONFIG_PSI
+ 	{
+ 		.name = "io.pressure",
+@@ -5861,6 +5937,11 @@
+ 	struct cgroup_subsys *ss;
+ 	int i, j, ret;
+ 
++	/* Adapt b69bb476dee9 to the pre-kernel_clone_args fork API. */
++	spin_lock_irq(&css_set_lock);
++	child->cgroup_kill_seq = task_css_set(current)->dfl_cgrp->kill_seq;
++	spin_unlock_irq(&css_set_lock);
++
+ 	do_each_subsys_mask(ss, i, have_canfork_callback) {
+ 		ret = ss->can_fork(child);
+ 		if (ret)
+@@ -5910,6 +5991,7 @@
+ void cgroup_post_fork(struct task_struct *child)
+ {
+ 	struct cgroup_subsys *ss;
++	bool kill = false;
+ 	int i;
+ 
+ 	/*
+@@ -5938,6 +6020,8 @@
+ 
+ 		spin_lock_irq(&css_set_lock);
+ 		cset = task_css_set(current);
++		kill = !(child->flags & PF_KTHREAD) &&
++			child->cgroup_kill_seq != cset->dfl_cgrp->kill_seq;
+ 		if (list_empty(&child->cg_list)) {
+ 			get_css_set(cset);
+ 			cset->nr_tasks++;
+@@ -5974,6 +6058,9 @@
+ 	do_each_subsys_mask(ss, i, have_fork_callback) {
+ 		ss->fork(child);
+ 	} while_each_subsys_mask();
++
++	if (unlikely(kill))
++		do_send_sig_info(SIGKILL, SEND_SIG_FORCED, child, true);
+ }
+ 
+ /**
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -1633,6 +1633,56 @@
+ 	current->memcg_in_oom = NULL;
+ 	css_put(&memcg->css);
+ 	return true;
++}
++
++struct mem_cgroup *mem_cgroup_get_oom_group(struct task_struct *victim,
++					    struct mem_cgroup *oom_domain)
++{
++	struct mem_cgroup *oom_group = NULL;
++	struct mem_cgroup *memcg;
++
++	if (!cgroup_subsys_on_dfl(memory_cgrp_subsys))
++		return NULL;
++
++	if (!oom_domain)
++		oom_domain = root_mem_cgroup;
++
++	rcu_read_lock();
++
++	memcg = mem_cgroup_from_task(victim);
++	if (memcg == root_mem_cgroup)
++		goto out;
++
++	/* 48fe267c503e: never extend a memcg OOM beyond its domain. */
++	if (unlikely(!mem_cgroup_is_descendant(memcg, oom_domain)))
++		goto out;
++
++	/*
++	 * Traverse the memory cgroup hierarchy from the victim task's
++	 * cgroup up to the OOMing cgroup (or root) to find the
++	 * highest-level memory cgroup with oom.group set.
++	 */
++	for (; memcg; memcg = parent_mem_cgroup(memcg)) {
++		if (READ_ONCE(memcg->oom_group))
++			oom_group = memcg;
++
++		if (memcg == oom_domain)
++			break;
++	}
++
++	if (oom_group)
++		css_get(&oom_group->css);
++out:
++	rcu_read_unlock();
++
++	return oom_group;
++}
++
++void mem_cgroup_print_oom_group(struct mem_cgroup *memcg)
++{
++	pr_info("Tasks in ");
++	pr_cont_cgroup_path(memcg->css.cgroup);
++	pr_cont(" are going to be killed due to memory.oom.group set\n");
+ }
+ 
+ /**
+@@ -4517,6 +4567,9 @@
+ {
+ 	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
+ 
++	/* 74183a956dec: reset hidden memory css policy too. */
++	WRITE_ONCE(memcg->oom_group, false);
++
+ 	page_counter_limit(&memcg->memory, PAGE_COUNTER_MAX);
+ 	page_counter_limit(&memcg->swap, PAGE_COUNTER_MAX);
+ 	page_counter_limit(&memcg->memsw, PAGE_COUNTER_MAX);
+@@ -5491,6 +5544,37 @@
+ 	return 0;
+ }
+ 
++static int memory_oom_group_show(struct seq_file *m, void *v)
++{
++	struct mem_cgroup *memcg = mem_cgroup_from_css(seq_css(m));
++
++	seq_printf(m, "%d\n", READ_ONCE(memcg->oom_group));
++
++	return 0;
++}
++
++static ssize_t memory_oom_group_write(struct kernfs_open_file *of,
++				      char *buf, size_t nbytes, loff_t off)
++{
++	struct mem_cgroup *memcg = mem_cgroup_from_css(of_css(of));
++	int ret, oom_group;
++
++	buf = strstrip(buf);
++	if (!buf)
++		return -EINVAL;
++
++	ret = kstrtoint(buf, 0, &oom_group);
++	if (ret)
++		return ret;
++
++	if (oom_group != 0 && oom_group != 1)
++		return -EINVAL;
++
++	WRITE_ONCE(memcg->oom_group, oom_group);
++
++	return nbytes;
++}
++
+ static struct cftype memory_files[] = {
+ 	{
+ 		.name = "current",
+@@ -5526,6 +5610,12 @@
+ 		.flags = CFTYPE_NOT_ON_ROOT,
+ 		.seq_show = memory_stat_show,
+ 	},
++	{
++		.name = "oom.group",
++		.flags = CFTYPE_NOT_ON_ROOT | CFTYPE_NS_DELEGATABLE,
++		.seq_show = memory_oom_group_show,
++		.write = memory_oom_group_write,
++	},
+ 	{ }	/* terminate */
+ };
+ 
+--- a/mm/oom_kill.c
++++ b/mm/oom_kill.c
+@@ -808,75 +808,11 @@
+ 	return ret;
+ }
+ 
+-static void oom_kill_process(struct oom_control *oc, const char *message)
+-{
+-	struct task_struct *p = oc->chosen;
+-	unsigned int points = oc->chosen_points;
+-	struct task_struct *victim = p;
+-	struct task_struct *child;
+-	struct task_struct *t;
++static void __oom_kill_process(struct task_struct *victim)
++{
++	struct task_struct *p;
+ 	struct mm_struct *mm;
+-	unsigned int victim_points = 0;
+-	static DEFINE_RATELIMIT_STATE(oom_rs, DEFAULT_RATELIMIT_INTERVAL,
+-					      DEFAULT_RATELIMIT_BURST);
+ 	bool can_oom_reap = true;
+-
+-	/*
+-	 * If the task is already exiting, don't alarm the sysadmin or kill
+-	 * its children or threads, just give it access to memory reserves
+-	 * so it can die quickly
+-	 */
+-	task_lock(p);
+-	if (task_will_free_mem(p)) {
+-		mark_oom_victim(p);
+-		wake_oom_reaper(p);
+-		task_unlock(p);
+-		put_task_struct(p);
+-		return;
+-	}
+-	task_unlock(p);
+-
+-	if (__ratelimit(&oom_rs))
+-		dump_header(oc, p);
+-
+-	pr_err("%s: Kill process %d (%s) score %u or sacrifice child\n",
+-		message, task_pid_nr(p), p->comm, points);
+-
+-	/*
+-	 * If any of p's children has a different mm and is eligible for kill,
+-	 * the one with the highest oom_badness() score is sacrificed for its
+-	 * parent.  This attempts to lose the minimal amount of work done while
+-	 * still freeing memory.
+-	 */
+-	read_lock(&tasklist_lock);
+-
+-	/*
+-	 * The task 'p' might have already exited before reaching here. The
+-	 * put_task_struct() will free task_struct 'p' while the loop still try
+-	 * to access the field of 'p', so, get an extra reference.
+-	 */
+-	get_task_struct(p);
+-	for_each_thread(p, t) {
+-		list_for_each_entry(child, &t->children, sibling) {
+-			unsigned int child_points;
+-
+-			if (process_shares_mm(child, p->mm))
+-				continue;
+-			/*
+-			 * oom_badness() returns 0 if the thread is unkillable
+-			 */
+-			child_points = oom_badness(child,
+-				oc->memcg, oc->nodemask, oc->totalpages);
+-			if (child_points > victim_points) {
+-				put_task_struct(victim);
+-				victim = child;
+-				victim_points = child_points;
+-				get_task_struct(victim);
+-			}
+-		}
+-	}
+-	put_task_struct(p);
+-	read_unlock(&tasklist_lock);
+ 
+ 	p = find_lock_task_mm(victim);
+ 	if (!p) {
+@@ -949,6 +885,96 @@
+ 	mmdrop(mm);
+ 	put_task_struct(victim);
+ }
++static int oom_kill_memcg_member(struct task_struct *task, void *unused)
++{
++	if (task->signal->oom_score_adj != OOM_SCORE_ADJ_MIN) {
++		get_task_struct(task);
++		__oom_kill_process(task);
++	}
++	return 0;
++}
++
++static void oom_kill_process(struct oom_control *oc, const char *message)
++{
++	struct task_struct *p = oc->chosen;
++	unsigned int points = oc->chosen_points;
++	struct task_struct *victim = p;
++	struct task_struct *child;
++	struct task_struct *t;
++	struct mem_cgroup *oom_group;
++	unsigned int victim_points = 0;
++	static DEFINE_RATELIMIT_STATE(oom_rs, DEFAULT_RATELIMIT_INTERVAL,
++					      DEFAULT_RATELIMIT_BURST);
++
++	/*
++	 * If the task is already exiting, don't alarm the sysadmin or kill
++	 * its children or threads, just give it access to memory reserves
++	 * so it can die quickly
++	 */
++	task_lock(p);
++	if (task_will_free_mem(p)) {
++		mark_oom_victim(p);
++		wake_oom_reaper(p);
++		task_unlock(p);
++		put_task_struct(p);
++		return;
++	}
++	task_unlock(p);
++
++	if (__ratelimit(&oom_rs))
++		dump_header(oc, p);
++
++	pr_err("%s: Kill process %d (%s) score %u or sacrifice child\n",
++		message, task_pid_nr(p), p->comm, points);
++
++	/*
++	 * If any of p's children has a different mm and is eligible for kill,
++	 * the one with the highest oom_badness() score is sacrificed for its
++	 * parent.  This attempts to lose the minimal amount of work done while
++	 * still freeing memory.
++	 */
++	read_lock(&tasklist_lock);
++
++	/*
++	 * The task 'p' might have already exited before reaching here. The
++	 * put_task_struct() will free task_struct 'p' while the loop still try
++	 * to access the field of 'p', so, get an extra reference.
++	 */
++	get_task_struct(p);
++	for_each_thread(p, t) {
++		list_for_each_entry(child, &t->children, sibling) {
++			unsigned int child_points;
++
++			if (process_shares_mm(child, p->mm))
++				continue;
++			/*
++			 * oom_badness() returns 0 if the thread is unkillable
++			 */
++			child_points = oom_badness(child,
++				oc->memcg, oc->nodemask, oc->totalpages);
++			if (child_points > victim_points) {
++				put_task_struct(victim);
++				victim = child;
++				victim_points = child_points;
++				get_task_struct(victim);
++			}
++		}
++	}
++	put_task_struct(p);
++	read_unlock(&tasklist_lock);
++
++	oom_group = mem_cgroup_get_oom_group(victim, oc->memcg);
++	__oom_kill_process(victim);
++
++	if (oom_group) {
++		mem_cgroup_print_oom_group(oom_group);
++		mem_cgroup_scan_tasks(oom_group, oom_kill_memcg_member, NULL);
++#ifdef CONFIG_MEMCG
++		css_put(&oom_group->css);
++#endif
++	}
++}
++
+ #undef K
+ 
+ /*

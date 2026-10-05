@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "updated_date": "2026-10-05",
+  "timezone": "Asia/Shanghai",
+  "user_instruction": "这个完整桌面先暂停一下吧",
+  "overall_kernel_work_status": "complete",
+  "accepted_stages": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "paused_stages": [
+    {
+      "stage": 6,
+      "feature": "完整 Android 16 桌面与应用容器",
+      "status": "paused",
+      "resumption": "用户明确要求恢复后继续",
+      "full_desktop_deployed": false,
+      "full_desktop_accepted": false,
+      "preparatory_research_retained": true,
+      "blocks_current_kernel_delivery": false
+    }
+  ],
+  "continuing_scope": [],
+  "accepted_kernel_release": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-a16pf",
+  "accepted_stage_receipt_sha256": {
+    "native-cpu-cpuset-stage3-h2cp4-acceptance.json": "d45d179169585b7079bc208d7682efaff9e7b87f54489434c40206d249d0e619",
+    "binfmt-stage4-acceptance.json": "f32598934607a41a10907955a41bc9cce71fc6a71fd7f2b152e422ef2c4481fa",
+    "seccomp-notify-stage5-acceptance.json": "a79370bf2d8e9b50002242b0cb4051522ec0eb56b6992431390bf4739980a45f"
+  },
+  "historical_acceptance_records": "保持原文及原始摘要；历史剩余任务范围不覆盖本次用户暂停决定",
+  "test_scope": "新功能专项 + 受影响短回归；合并候选减少刷入；同 boot 合适证据复用；详细日志留文件；默认不做整机专项或重复 panic",
+  "plan": "docs/container-hardening-plan.md",
+  "accepted_features": [
+    {
+      "feature": "Android 16 Binder 冻结通知与标准能力发现",
+      "status": "accepted",
+      "acceptance": "runtime/candidates/a16pf/evidence/binder-freeze-acceptance.json",
+      "acceptance_sha256": "d7942418ddcb7443552c14b417d7c9e3e0dc5342813f108cb071da7a93c79aa0",
+      "boot_id": "db5703c3-a205-47fb-9bda-c6f077eb0ee6"
+    },
+    {
+      "feature": "分组 PSI、回收 full 通知与容器 memory.high/压力监视",
+      "status": "accepted",
+      "acceptance": "runtime/candidates/a16pf/evidence/group-psi-acceptance.json",
+      "acceptance_sha256": "1a4c23394174673282b1c5212166d8f4032a3a7d974a865442689395ad8f30f7",
+      "boot_id": "b5d511b9-fe8d-44d0-94a9-957babb14d53"
+    },
+    {
+      "feature": "当前 Android 16 ROM 实际 eBPF 接口与 CPU/网络记账",
+      "status": "accepted",
+      "acceptance": "runtime/candidates/a16pf/evidence/android16-bpf-acceptance.json",
+      "acceptance_sha256": "36bbe48c0e7d538d644a33f0b6ebcf4caf5871efc219c2e9a134f1c712afafc7",
+      "boot_id": "b5d511b9-fe8d-44d0-94a9-957babb14d53",
+      "new_bpf_kernel_code_required": false
+    }
+  ],
+  "next_work_evidence": [
+    "runtime/candidates/a16pf/evidence/android16-bpf-acceptance.json"
+  ],
+  "next_work_finding": "当前 ROM eBPF 实际挂载、UID CPU 时间与 IPv4/IPv6 回环网络记账通过；新接口回移无实际缺失，当前功能项已验收，整理交付与完成审计。",
+  "current_candidate": {
+    "stage": "android16-group-psi-reclaim-fix",
+    "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-a16pf",
+    "boot_id": "b5d511b9-fe8d-44d0-94a9-957babb14d53",
+    "boot_sha256": "dfe18875661164e7cb64eba7942b856e80ffe20abb537aec815da4bf43995cdd",
+    "boot_verified": true,
+    "deployed": true,
+    "runtime_accepted": true,
+    "build_audit_passed": true,
+    "kernel_sha256": "ecc93ef7e4aaf8256d95ff0471be78be9c3ab17a6d6cd419eb9748729ec955c9",
+    "existing_export_crc_preserved": false,
+    "changed_existing_export_crcs": 3916,
+    "abi_review_sha256": "ed67568cc91707657ae467cd570edd725d91335bec6ac8e4ee9db60179adea28",
+    "external_module_compatibility": false,
+    "passed_partial_scope": [],
+    "unresolved": null,
+    "next_action": "当前约定范围完成；完整桌面保持暂停，研究方向待明确后续请求",
+    "acceptance": "runtime/candidates/a16pf/evidence/group-psi-acceptance.json",
+    "acceptance_sha256": "1a4c23394174673282b1c5212166d8f4032a3a7d974a865442689395ad8f30f7",
+    "passed_scope": [
+      "some/full 独立通知及父组/邻组",
+      "回收任务移组和监视目标绑定",
+      "真实 guest 重启与策略生命周期",
+      "受影响 CPU/过滤/旧策略/Binder/宿主回归"
+    ]
+  },
+  "prepared_successor": {
+    "stage": "android16-group-psi-reclaim-fix",
+    "planned_kernel_suffix": "a16pf",
+    "status": "a16pf built, deployed and functionally accepted",
+    "preparation": "runtime/candidates/a16pf/evidence/kernel-ext-android16-group-psi-reclaim-fix/preparation.json",
+    "built": true,
+    "deployed": true,
+    "runtime_accepted": true
+  },
+  "historical_psi_iterations": [
+    {
+      "stage": "android16-group-psi",
+      "kernel": "4.14.356-openela-rc1-perf-droidspaces-lr2-ksu3-ext-a16ps",
+      "build_audit_passed": true,
+      "kernel_sha256": "c8a9191dac4eb41df376e372ac14b5e677d58b08e71ccc6e128451dbb99814b8",
+      "existing_export_crc_preserved": true,
+      "deployed": true,
+      "runtime_accepted": false,
+      "next_action": "构建并审计针对 upstream cb0e52b 的 reclaim/full 三文件适配，实机复验 full 独立订阅及完整 PSI 回归后再封存验收；之后核查当前 ROM eBPF 需求",
+      "boot_id": "8b8cec5a-469b-4f91-8d8a-ae7198d3d48a",
+      "boot_sha256": "657160ff31a42eb44fe4c598190318afb83895cae875d45ca026676d4a3f8bb4",
+      "boot_verified": true,
+      "failed_probe_records": [
+        "artifacts/droidspaces/runtime/psi-policy-a16ps-20261005.json",
+        "artifacts/droidspaces/runtime/psi-policy2-a16ps-20261005.json",
+        "artifacts/droidspaces/runtime/psi-policy-full-a16ps-20261005.json",
+        "artifacts/droidspaces/runtime/psi-policy-full-diagnostic-a16ps-20261005.json"
+      ],
+      "passed_partial_scope": [
+        "四种 some 订阅和父组通知",
+        "监视工具超时/移组/同名替换拒绝",
+        "真实 guest 重启 memory.high 策略和工具持久化",
+        "过滤、原生 CPU/cpuset、旧格式策略、Android 16 Binder 公开回调回归"
+      ],
+      "unresolved": "full-only 通知没有触发；实际 full 计数已增长，未完成完整 PSI 验收"
+    }
+  ],
+  "test_policy": "docs/test-policy.md",
+  "test_review": "docs/validation-review.md",
+  "test_policy_user_instruction": "复盘此前测试，减少无意义验收、刷入次数和 token 消耗，集中功能验收与迭代",
+  "final_delivery_acceptance": "FINAL-DELIVERY-ACCEPTANCE.json",
+  "final_delivery_acceptance_sha256": "de67c9e1d5b3e882d08bc3d8b6e1c3d2cb5ddc0117a752dd17f835cc21a0d44a"
+}

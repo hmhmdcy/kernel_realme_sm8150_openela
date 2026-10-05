@@ -69,6 +69,9 @@ static inline void psi_enqueue(struct task_struct *p, bool wakeup)
 	if (static_branch_likely(&psi_disabled))
 		return;
 
+	if (p->flags & PF_MEMSTALL)
+		set |= TSK_MEMSTALL_RUNNING;
+
 	if (!wakeup || p->sched_psi_wake_requeue) {
 		if (p->flags & PF_MEMSTALL)
 			set |= TSK_MEMSTALL;
@@ -88,6 +91,9 @@ static inline void psi_dequeue(struct task_struct *p, bool sleep)
 
 	if (static_branch_likely(&psi_disabled))
 		return;
+
+	if (p->flags & PF_MEMSTALL)
+		clear |= TSK_MEMSTALL_RUNNING;
 
 	if (!sleep) {
 		if (p->flags & PF_MEMSTALL)
